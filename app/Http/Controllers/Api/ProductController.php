@@ -111,6 +111,32 @@ class ProductController extends Controller
         }
     }
 
+    public function deleteImage(string $productId, string $imageId)
+    {
+        try {
+            if (Gate::allows("is-admin")) {
+                $product = Product::findOrFail($productId);
+                $image = $product->productImages()->findOrFail($imageId);
+
+                // Delete the image file if it exists
+                $imagePath = 'images/products/' . $image->image;
+                if (file_exists(public_path($imagePath))) {
+                    unlink(public_path($imagePath));
+                }
+
+                // Delete the image record from the database
+                $image->delete();
+
+                return response()->json(['message' => 'Image deleted successfully'], 200);
+            }
+
+            return response()->json(['message' => 'Unauthorized'], 403);
+        } catch (Exception $e) {
+            Log::error('Error deleting image: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
 
     public function destroy(string $id)
     {

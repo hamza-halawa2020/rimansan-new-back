@@ -85,6 +85,7 @@ Route::apiResource('tags', TagController::class);
 Route::apiResource('products', ProductController::class);
 Route::post('products/{id}', [ProductController::class, 'update']);
 Route::get('/product/category/{id}', [ProductController::class, 'indexByCategory']);
+Route::delete('products/{product}/images/{image}', [ProductController::class, 'deleteImage']);
 /**************************** end product api ****************************/
 
 /**************************** start contact us api ****************************/
