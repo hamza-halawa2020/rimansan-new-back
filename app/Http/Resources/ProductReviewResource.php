@@ -22,10 +22,12 @@ class ProductReviewResource extends JsonResource
             "review" => $this->review,
             "rating" => $this->rating,
             "status" => $this->status,
-            "user" => $this->user->name,
-            "user_id" => $this->user->id,
-            "client" => $this->client->name,
-            "client_id" => $this->client->id,
+            'user' => optional($this->user)->name,
+            "admin_id" => $this->admin_id,
+            'admin' => optional($this->admin)->name,
+            "user_id" => $this->user_id,
+            'client' => optional($this->client)->name,
+            "client_id" => $this->client_id,
             "created_at" => $this->created_at,
         ];
     }

@@ -89,7 +89,7 @@ class SocialLinkController extends Controller
                 }
 
                 $image->move(public_path($folderPath), $filename);
-                $validatedData['icon'] = $folderPath . $filename;
+                $validatedData['icon'] =  $filename;
             }
 
             $socialLink->update($validatedData);

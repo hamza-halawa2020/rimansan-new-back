@@ -63,6 +63,7 @@ Route::post('password-reset', [ForgetPasswordController::class, 'resetPassword']
 /**************************** start user api ****************************/
 Route::apiResource('users', UserController::class);
 Route::get('profile', [UserController::class, 'profile']);
+Route::post('users/{id}', [UserController::class, 'update']);
 /**************************** end user api ****************************/
 
 /**************************** start client api ****************************/
@@ -94,6 +95,7 @@ Route::apiResource('contacts', ContactController::class);
 
 /**************************** start social-links api ****************************/
 Route::apiResource('social-links', SocialLinkController::class);
+Route::post('social-links/{id}', [SocialLinkController::class, 'update']);
 /**************************** end social-links api ****************************/
 
 /**************************** start side-bar-banner api ****************************/
