@@ -23,9 +23,11 @@ class AddressResource extends JsonResource
             'city' => $this->city?->name ?? 'N/A',
             'city_id' => $this->city?->id ?? null,
             'user_id' => $this->user?->id ?? null,
-            'user' => $this->user?->name ?? 'N/A',
+            // 'user' => $this->user?->name ?? 'N/A',
+            'user' => new OrderUserResource($this->user) ?? 'N/A',
             'client_id' => $this->client?->id ?? null,
-            'client' => $this->client?->name ?? 'N/A',
+            // 'client' => $this->client?->name ?? 'N/A',
+            'client' => new OrderClientResource($this->client) ?? 'N/A',
             'created_at' => $this->created_at,
         ];
     }
