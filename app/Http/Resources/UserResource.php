@@ -24,6 +24,7 @@ class UserResource extends JsonResource
             "image" => $this->image,
             "email_verified_at" => $this->email_verified_at,
             "type" => $this->type,
+            "created_at" => $this->created_at,
             'addresses' => AddressResource::collection($this->addresses),
         ];
     }

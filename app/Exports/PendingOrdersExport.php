@@ -18,7 +18,7 @@ class PendingOrdersExport implements FromCollection, WithHeadings
 
     public function __construct()
     {
-        $this->maxOrderItems = Order::where('status', 'pending')
+        $this->maxOrderItems = Order::where('status', 'Pending')
             ->withCount('orderItems')
             ->get()
             ->max('order_items_count');
@@ -26,7 +26,7 @@ class PendingOrdersExport implements FromCollection, WithHeadings
 
     public function collection()
     {
-        $orders = Order::where('status', 'pending')
+        $orders = Order::where('status', 'Pending')
             ->with(['user', 'client', 'address.country', 'address.city', 'orderItems.product'])
             ->get();
 
@@ -39,6 +39,7 @@ class PendingOrdersExport implements FromCollection, WithHeadings
                 'payment_method' => $order->payment_method,
                 'user_name' => $order->user ? $order->user->name : ($order->client ? $order->client->name : 'N/A'),
                 'user_email' => $order->user ? $order->user->email : ($order->client ? $order->client->email : 'N/A'),
+                'user_phone' => $order->user ? $order->user->phone : ($order->client ? $order->client->phone : 'N/A'),
                 'country' => $order->address && $order->address->country ? $order->address->country->name : 'N/A',
                 'city' => $order->address && $order->address->city ? $order->address->city->name : 'N/A',
                 'address' => $order->address ? $order->address->address : 'N/A',
@@ -73,6 +74,7 @@ class PendingOrdersExport implements FromCollection, WithHeadings
             'Payment Method',
             'User/Client Name',
             'User/Client Email',
+            'User/Client Phone',
             'Country',
             'City',
             'Address',
@@ -90,4 +92,3 @@ class PendingOrdersExport implements FromCollection, WithHeadings
         return $headings;
     }
 }
-

@@ -201,9 +201,11 @@ Route::get('orders-filter/{status}', [OrderController::class, 'filterByStatus'])
 Route::post('orders-change/{id}', [OrderController::class, 'changeStatus']);
 Route::post('orders-store', [OrderController::class, 'storeByClient']);
 Route::get('orders-export', [OrderController::class, 'exportPendingOrders']);
+
 /**************************** end orders api ****************************/
 
 /**************************** start paymob integration api ****************************/
+Route::get('payments', [PaymobIntegrationController::class, 'index']);
 Route::get('state', [PaymobIntegrationController::class, 'state']);
 Route::prefix('payment')->group(function () {
     Route::post('/credit', [PaymobIntegrationController::class, 'credit']);

@@ -89,20 +89,7 @@ class UserController extends Controller
             $user = User::findOrFail($id);
             $data = $request->validated();
 
-            if (Gate::allows('is-admin')) {
-
-                $user->update([
-                    'name' => $data['name'] ?? $user->name,
-                    'phone' => $data['phone'] ?? $user->phone,
-                    'email' => $data['email'] ?? $user->email,
-                    'type' => $data['type'] ?? $user->type,
-                    'password' => $user->password,
-                    'image' => $user->image,
-                ]);
-
-
-                return response()->json(['data' => new UserResource($user)], 200);
-            } else if (auth()->user()->id === (int) $id) {
+            if (auth()->user()->id === (int) $id) {
 
                 if ($request->hasFile('image')) {
                     $image = $request->file('image');
@@ -125,6 +112,19 @@ class UserController extends Controller
                     'type' => $user->type,
                     'password' => isset($data['password']) ? bcrypt($data['password']) : $user->password,
                     'image' => $data['image'] ?? $user->image,
+                ]);
+
+
+                return response()->json(['data' => new UserResource($user)], 200);
+            } else if (Gate::allows('is-admin')) {
+
+                $user->update([
+                    'name' => $data['name'] ?? $user->name,
+                    'phone' => $data['phone'] ?? $user->phone,
+                    'email' => $data['email'] ?? $user->email,
+                    'type' => $data['type'] ?? $user->type,
+                    'password' => $user->password,
+                    'image' => $user->image,
                 ]);
 
 

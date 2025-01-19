@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Gate;
 use Exception;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PendingOrdersExport;
+use Illuminate\Support\Facades\Log;
+
 class OrderController extends Controller
 {
     private $userId;
@@ -30,15 +32,19 @@ class OrderController extends Controller
             $this->userId = auth()->id();
             return $next($request);
         });
-
     }
 
 
 
     public function exportPendingOrders()
     {
-        $fileName = 'pending-orders.xlsx';
-        return Excel::download(new PendingOrdersExport, $fileName);
+        try {
+            $fileName = 'pending-orders.xlsx';
+            return Excel::download(new PendingOrdersExport, $fileName);
+        } catch (Exception $e) {
+            Log::error('Error exporting pending orders: ' . $e->getMessage());
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
     }
 
 
@@ -60,7 +66,7 @@ class OrderController extends Controller
     public function myOrders()
     {
         try {
-            $orders = Order::where('user_id', $this->userId, )->paginate(10);
+            $orders = Order::where('user_id', $this->userId,)->paginate(10);
             return OrderResource::collection($orders);
         } catch (Exception $e) {
             return response()->json($e, 500);
@@ -156,7 +162,6 @@ class OrderController extends Controller
             if ($order->payment_method != 'cash_on_delivery') {
                 // $this->processPayment($order, $request);
                 $order->update(['status' => 'Awaiting Payment']);
-
             }
             DB::commit();
             return response()->json(['data' => new OrderResource($order)], 200);
@@ -172,7 +177,7 @@ class OrderController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $order = Order::where('status', $status, )->get();
+                $order = Order::where('status', $status,)->get();
                 return new OrderResource($order);
             } else {
                 return response()->json(['message' => 'not allow to show Order.'], 403);
@@ -187,7 +192,7 @@ class OrderController extends Controller
     public function show($id)
     {
         try {
-            $order = Order::where('user_id', $this->userId, )->findOrFail($id);
+            $order = Order::where('user_id', $this->userId,)->findOrFail($id);
             return new OrderResource($order);
         } catch (Exception $e) {
             return response()->json($e, 500);
@@ -200,7 +205,7 @@ class OrderController extends Controller
             $validated = $request->validate([
                 'status' => 'required|string|in:Canceled',
             ]);
-            $order = Order::where('user_id', $this->userId, )->findOrFail($id);
+            $order = Order::where('user_id', $this->userId,)->findOrFail($id);
             $order->update(['status' => $validated['status']]);
             return new OrderResource($order);
         } catch (Exception $e) {
@@ -208,21 +213,31 @@ class OrderController extends Controller
         }
     }
 
-    public function changeStatus(Request $request, string $id)
+    public function changeStatus(Request $request, $id)
     {
-        try {
-            if (!Gate::allows('is-admin')) {
-                return response()->json(['message' => 'You are not authorized to change the order status.'], 403);
-            }
-            $validated = $request->validate([
-                'status' => 'required|string|in:Pending,Returned,Shipped,Delivered',
-            ]);
-            $order = Order::where('user_id', $this->userId)->findOrFail($id);
-            $order->update(['status' => $validated['status']]);
-            return new OrderResource($order);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'Something went wrong.', 'error' => $e->getMessage()], 500);
+        Log::info('Received request to change status for order:', ['id' => $id, 'payload' => $request->all()]);
+
+        if (!Gate::allows('is-admin')) {
+            return response()->json(['message' => 'You are not authorized to change the order status.'], 403);
         }
+
+        $validated = $request->validate([
+            'status' => 'required',
+        ]);
+        $order = Order::find($id);
+
+        if (!$order) {
+            Log::error('Order not found:', ['id' => $id]);
+            return response()->json(['message' => 'Order not found.'], 404);
+        }
+
+        $order->status = $validated['status'];
+        $order->admin_id = $this->userId;
+        $order->save();
+
+        Log::info('Order status updated successfully:', ['order' => $order]);
+
+        return response()->json(['message' => 'Order status updated successfully.', 'order' => $order]);
     }
 
 
@@ -296,5 +311,4 @@ class OrderController extends Controller
 
         return $validatedData;
     }
-
 }

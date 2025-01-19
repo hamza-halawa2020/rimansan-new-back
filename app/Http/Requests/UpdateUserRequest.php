@@ -28,15 +28,16 @@ class UpdateUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|required|string',
+            'name' => 'sometimes|required|string|max:255',
             'email' => [
                 'sometimes',
                 'required',
                 'string',
-                'email' . $this->route('user'),
+                'email' . $this->route('id'),
+
             ],
             'image' => Gate::allows('is-admin') ? 'nullable' : 'sometimes|required|image|max:10240',
-            'type' => 'sometimes|required|string',
+            'type' => 'sometimes|required|string|in:admin,user',
             'phone' => [
                 'sometimes',
                 'required',

@@ -3,16 +3,40 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PaymentResource;
 use App\Models\Order;
 use App\Models\Payment;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Gate;
+
 
 class PaymobIntegrationController extends Controller
+
 {
+    function __construct()
+    {
+        $this->middleware("auth:sanctum")->only(['index']);
+        $this->middleware("limitReq");
+    }
     private $baseUrl = 'https://accept.paymob.com/api';
+
+
+    public function index()
+    {
+        try {
+            if (Gate::allows("is-admin")) {
+                $payments = Payment::paginate(10);
+                return PaymentResource::collection($payments);
+            } else {
+                return response()->json(['message' => 'not allow to show payments.'], 403);
+            }
+        } catch (Exception $e) {
+            return response()->json($e, 500);
+        }
+    }
 
     public function state()
     {
@@ -223,7 +247,6 @@ class PaymobIntegrationController extends Controller
             ]);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
-
         }
     }
 
@@ -341,7 +364,4 @@ class PaymobIntegrationController extends Controller
             return response()->json($e->getMessage(), 500);
         }
     }
-
-
-
 }
