@@ -19,8 +19,9 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
-
+    // 'allowed_origins' => ['*'],
+    'allowed_origins' => ['https://admin.rimansan.net'],
+    
     'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],
