@@ -17,15 +17,15 @@ class UserResource extends JsonResource
         // return parent::toArray($request);
         return [
             "id" => $this->id,
-            "name" => $this->name ?? null,
-            "slug" => $this->slug ?? null,
-            "email" => $this->email ?? null,
-            "phone" => $this->phone ?? null,
-            "image" => $this->image ?? null,
-            "email_verified_at" => $this->email_verified_at ? $this->email_verified_at->toDateTimeString() : null,
-            "type" => $this->type ?? null,
-            "created_at" => $this->created_at ? $this->created_at->toDateTimeString() : null,
-            'addresses' => $this->whenLoaded('addresses', fn() => AddressResource::collection($this->addresses)),
+            "name" => $this->name,
+            "slug" => $this->slug,
+            "email" => $this->email,
+            "phone" => $this->phone,
+            "image" => $this->image,
+            "email_verified_at" => $this->email_verified_at,
+            "type" => $this->type,
+            "created_at" => $this->created_at,
+            'addresses' => AddressResource::collection($this->addresses),
         ];
     }
 }
