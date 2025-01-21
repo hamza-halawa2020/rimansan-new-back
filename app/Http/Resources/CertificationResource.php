@@ -20,7 +20,7 @@ class CertificationResource extends JsonResource
             'serial_number' => $this->serial_number,
             'file' => $this->file,
             'user_id' => $this->user_id,
-            'user' => $this->user->name,
+            'user' => $this->user->name ?? null,
             'created_at' => $this->created_at,
         ];
     }

@@ -71,30 +71,40 @@ class CertificationController extends Controller
         try {
             if (Gate::allows("is-admin")) {
                 $Certification = Certification::find($id);
-
+    
+                // Check if the Certification exists
+                if (!$Certification) {
+                    return response()->json(['message' => 'Certification not found.'], 404);
+                }
+    
+                $validatedData = $request->validated();
+    
                 if ($request->hasFile('file')) {
                     $image = $request->file('file');
                     $extension = $image->getClientOriginalExtension();
                     $filename = time() . '_' . uniqid() . '.' . $extension;
                     $folderPath = 'images/Certifications/';
-
-                    if ($Certification->image && $Certification->image !== 'images/Certifications/default.png' && file_exists(public_path($Certification->image))) {
-                        unlink(public_path($Certification->image));
+    
+                    // Delete the old image if it exists
+                    if ($Certification->file && $Certification->file !== 'default.png' && file_exists(public_path($folderPath . $Certification->file))) {
+                        unlink(public_path($folderPath . $Certification->file));
                     }
-
+    
                     $image->move(public_path($folderPath), $filename);
                     $validatedData['file'] = $filename;
                 }
-
-                $validatedData = $request->validated();
+    
                 $Certification->update($validatedData);
+    
                 return response()->json(new CertificationResource($Certification), 200);
             }
+    
             return response()->json(['message' => 'Not allowed to update Certifications.'], 403);
         } catch (Exception $e) {
             return response()->json(['message' => 'An error occurred while updating the Certification.'], 500);
         }
     }
+    
 
 
     public function destroy(string $id)

@@ -27,7 +27,7 @@ class CouponResource extends JsonResource
             'end_date' => $this->end_date,
             'is_active' => $this->is_active,
             'admin_id' => $this->admin_id,
-            'admin' => $this->admin->name,
+            'admin' => $this->admin->name ?? null,
             'created_at' => $this->created_at,
 
 

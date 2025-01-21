@@ -72,22 +72,23 @@ class InstructorController extends Controller
         try {
             if (Gate::allows("is-admin")) {
                 $instructor = Instructor::find($id);
+                $validatedData = $request->validated();
 
                 if ($request->hasFile('image')) {
                     $image = $request->file('image');
                     $extension = $image->getClientOriginalExtension();
                     $filename = time() . '_' . uniqid() . '.' . $extension;
-                    $folderPath = 'images/courses/';
+                    $folderPath = 'images/instructors/';
 
-                    if ($instructor->image && $instructor->image !== 'images/instructors/default.png' && file_exists(public_path($instructor->image))) {
-                        unlink(public_path($instructor->image));
+
+                    if ($instructor->image && $instructor->image !== 'default.png' && file_exists(public_path($folderPath . $instructor->image))) {
+                        unlink(public_path($folderPath . $instructor->image));
                     }
 
                     $image->move(public_path($folderPath), $filename);
-                    $validatedData['image'] = $folderPath . $filename;
+                    $validatedData['image'] =  $filename;
                 }
 
-                $validatedData = $request->validated();
                 $instructor->update($validatedData);
                 return response()->json(new InstructorResource($instructor), 200);
             }

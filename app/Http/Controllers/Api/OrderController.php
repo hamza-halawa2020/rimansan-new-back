@@ -129,6 +129,8 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
             $validatedData = $request->validated();
+            $validatedData = $this->prepareOrderData($request);
+            
             $client = Client::create([
                 'name' => $validatedData['name'],
                 'email' => $validatedData['email'],
@@ -139,7 +141,6 @@ class OrderController extends Controller
                 'country_id' => $validatedData['country_id'],
                 'city_id' => $validatedData['city_id'],
             ]);
-            $validatedData = $this->prepareOrderData($request);
             $order = Order::create([
                 'client_id' => $client->id,
                 'address_id' => $address->id,
@@ -293,19 +294,59 @@ class OrderController extends Controller
             throw new Exception("Failed to process payment: " . $e->getMessage());
         }
     }
+    // private function prepareOrderData($request)
+    // {
+    //     $validatedData = $request->validated();
+    //     if (isset($validatedData['coupon_id'])) {
+    //         $coupon = Coupon::findOrFail($validatedData['coupon_id']);
+    //         $validatedData['coupon_discount'] = $coupon->discount;
+    //     } else {
+    //         $validatedData['coupon_discount'] = 0;
+    //     }
+    //     $city = City::findOrFail($validatedData['city_id']);
+    //     $shipment = $city->shipments()->firstOrFail();
+    //     $validatedData['shipment_id'] = $shipment->id;
+    //     $validatedData['shipment_cost'] = $shipment->cost;
+    //     $validatedData['total_price'] = 0;
+    //     $validatedData['order_number'] = 'ORD-' . Str::uuid();
+
+    //     return $validatedData;
+    // }
+
     private function prepareOrderData($request)
     {
+        
         $validatedData = $request->validated();
+
+        // Check if coupon is expired
         if (isset($validatedData['coupon_id'])) {
             $coupon = Coupon::findOrFail($validatedData['coupon_id']);
+            $currentDate = now();
+
+            if ($coupon->is_active != 1 || $coupon->end_date < $currentDate) {
+                throw new Exception("The selected coupon is expired or inactive.");
+            }
+
+            // Check if max uses are exceeded
+            if ($coupon->uses_count >= $coupon->max_uses) {
+                throw new Exception("The selected coupon has reached its maximum usage limit.");
+            }
+
+          
             $validatedData['coupon_discount'] = $coupon->discount;
+            $coupon->uses_count++;
+            $coupon->save();  // Save the incremented coupon usage
         } else {
             $validatedData['coupon_discount'] = 0;
         }
+
+        // Find shipment info
         $city = City::findOrFail($validatedData['city_id']);
         $shipment = $city->shipments()->firstOrFail();
         $validatedData['shipment_id'] = $shipment->id;
         $validatedData['shipment_cost'] = $shipment->cost;
+
+        // Initialize total price and order number
         $validatedData['total_price'] = 0;
         $validatedData['order_number'] = 'ORD-' . Str::uuid();
 

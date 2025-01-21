@@ -9,7 +9,6 @@ use App\Http\Resources\EventResource;
 use App\Models\Event;
 use Exception;
 use Illuminate\Support\Facades\Gate;
-use Log;
 
 class EventController extends Controller
 {
@@ -23,7 +22,6 @@ class EventController extends Controller
             $this->userId = auth()->id();
             return $next($request);
         });
-
     }
 
     public function index()
@@ -49,7 +47,6 @@ class EventController extends Controller
                     $filename = time() . '_' . uniqid() . '.' . $extension;
                     $folderPath = 'images/events/';
                     $image->move(public_path($folderPath), $filename);
-
                 }
                 $validatedData['image'] = $filename ?? 'default.png';
                 $Event = Event::create($validatedData);
@@ -86,7 +83,7 @@ class EventController extends Controller
         }
     }
 
-    public function update(UpdateEventRequest $request, string $id)
+    public function update(UpdateEventRequest $request, $id)
     {
         try {
             if (Gate::allows("is-admin")) {
@@ -105,13 +102,14 @@ class EventController extends Controller
                         }
                     }
                 }
+                $Event->update($validatedData);
+
 
                 return response()->json(['data' => new EventResource($Event)], 200);
             }
 
             return response()->json(['error' => 'Unauthorized'], 403);
         } catch (Exception $e) {
-            Log::error('Error in update method: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -137,7 +135,6 @@ class EventController extends Controller
 
             return response()->json(['message' => 'Unauthorized'], 403);
         } catch (Exception $e) {
-            Log::error('Error deleting image: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
