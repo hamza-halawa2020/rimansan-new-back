@@ -34,6 +34,18 @@ class CourseController extends Controller
         }
     }
 
+
+    public function randomCourses()
+    {
+        try {
+            $randomCourses = Course::inRandomOrder()->take(3)->get();
+            return CourseResource::collection($randomCourses);
+        } catch (Exception $e) {
+            return response()->json($e->getMessage(), 500);
+        }
+    }
+
+
     public function store(StoreCourseRequest $request)
     {
         try {
