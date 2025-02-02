@@ -137,7 +137,7 @@ Route::post('instructors/{id}', [InstructorController::class, 'update']);
 /**************************** start courses api ****************************/
 Route::apiResource('courses', CourseController::class);
 Route::post('courses/{id}', [CourseController::class, 'update']);
-Route::gwt('random-courses', [CourseController::class, 'randomCourses']);
+Route::get('random-courses', [CourseController::class, 'randomCourses']);
 
 /**************************** end courses api ****************************/
 
