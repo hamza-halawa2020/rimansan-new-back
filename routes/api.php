@@ -107,6 +107,8 @@ Route::get('side-bar-banners-all', [AddSideBarBannerController::class, 'all']);
 /**************************** start posts api ****************************/
 Route::apiResource('posts', PostController::class);
 Route::post('posts/{id}', [PostController::class, 'update']);
+Route::get('random-posts', [PostController::class, 'randomPosts']);
+
 /**************************** end posts api ****************************/
 
 /**************************** start comments api ****************************/

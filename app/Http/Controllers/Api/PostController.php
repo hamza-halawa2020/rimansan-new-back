@@ -14,7 +14,7 @@ class PostController extends Controller
 {
     function __construct()
     {
-        $this->middleware("auth:sanctum")->except(['index', 'show']);
+        $this->middleware("auth:sanctum")->except(['index', 'show', 'randomPosts']);
         $this->middleware("limitReq");
     }
 
@@ -22,6 +22,15 @@ class PostController extends Controller
     {
         try {
             $Posts = Post::paginate(10);
+            return PostResource::collection($Posts);
+        } catch (Exception $e) {
+            return response()->json($e->getMessage(), 500);
+        }
+    }
+    public function randomPosts()
+    {
+        try {
+            $Posts = Post::inRandomOrder()->take(3)->get();
             return PostResource::collection($Posts);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
@@ -42,7 +51,6 @@ class PostController extends Controller
                     $filename = time() . '_' . uniqid() . '.' . $extension;
                     $folderPath = 'images/posts/';
                     $image->move(public_path($folderPath), $filename);
-
                 }
 
                 $validatedData['image'] = $filename ?? 'default.png';
