@@ -131,6 +131,7 @@ Route::apiResource('favourites', FavouriteController::class);
 /**************************** start instructors api ****************************/
 Route::apiResource('instructors', InstructorController::class);
 Route::post('instructors/{id}', [InstructorController::class, 'update']);
+Route::get('random-instructors', [InstructorController::class, 'randomInstructors']);
 
 /**************************** end instructors api ****************************/
 

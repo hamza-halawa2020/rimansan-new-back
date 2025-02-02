@@ -16,7 +16,7 @@ class InstructorController extends Controller
     private $userId;
     function __construct()
     {
-        $this->middleware("auth:sanctum")->except('index', 'show');
+        $this->middleware("auth:sanctum")->except('index', 'show','randomInstructors');
         $this->middleware("limitReq");
         $this->middleware(function ($request, $next) {
             $this->userId = auth()->id();
@@ -28,6 +28,16 @@ class InstructorController extends Controller
     {
         try {
             $Instructors = Instructor::paginate(10);
+            return InstructorResource::collection($Instructors);
+        } catch (Exception $e) {
+            return response()->json($e->getMessage(), 500);
+        }
+    }
+
+    public function randomInstructors()
+    {
+        try {
+            $Instructors = Instructor::inRandomOrder()->take(3)->get();
             return InstructorResource::collection($Instructors);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
