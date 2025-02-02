@@ -19,6 +19,7 @@ class ProductReviewResource extends JsonResource
             'id' => $this->id,
             "product_id" => $this->product_id,
             "product" => $this->product->title,
+            "product_image" => $this->product->productImages[0]->image,
             "review" => $this->review,
             "rating" => $this->rating,
             "status" => $this->status,

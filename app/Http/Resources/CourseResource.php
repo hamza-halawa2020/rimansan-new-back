@@ -26,6 +26,7 @@ class CourseResource extends JsonResource
             "tag" => $this->tag->name,
             "instructor_id" => $this->instructor_id,
             "instructor" => $this->instructor->name,
+            "instructor_image" => $this->instructor->image,
             "title" => $this->title,
             "description" => $this->description,
             "video_url" => $this->video_url,
