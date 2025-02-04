@@ -34,7 +34,7 @@ class CourseResource extends JsonResource
             "image" => $this->image,
             "price" => $this->price,
             "certifications" => $this->certifications,
-            'courseReviews' => CourseReview::collection($this->courseReviews),
+            'courseReviews' => new CourseReview($this->courseReviews),
 
             "created_at" => $this->created_at,
         ];
