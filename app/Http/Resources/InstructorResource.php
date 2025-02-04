@@ -25,6 +25,7 @@ class InstructorResource extends JsonResource
             'description' => $this->description,
             'admin_id' => $this->admin_id,
             'admin' => $this->admin->name,
+            'courses' =>  CourseResource::collection($this->courses),
             'created_at' => $this->created_at,
         ];
     }

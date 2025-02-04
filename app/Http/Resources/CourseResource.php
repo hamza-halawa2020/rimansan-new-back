@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\CourseReview;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -33,8 +34,9 @@ class CourseResource extends JsonResource
             "image" => $this->image,
             "price" => $this->price,
             "certifications" => $this->certifications,
+            'courseReviews' => CourseReview::collection($this->courseReviews),
+
             "created_at" => $this->created_at,
         ];
-
     }
 }
