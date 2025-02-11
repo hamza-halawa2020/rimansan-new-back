@@ -24,7 +24,7 @@ class PostResource extends JsonResource
             "content" => $this->content,
             "admin_id" => $this->admin_id,
             "admin" => $this->admin->name,
-            "adminImage" => $this->admin->image,
+            "admin_image" => $this->admin->image,
             "image" => $this->image,
             "created_at" => $this->created_at,
             'postComments' => PostcommentActiveResource::collection($this->postComments->where('status', 'active')),
