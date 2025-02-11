@@ -26,7 +26,7 @@ class PostResource extends JsonResource
             "admin" => $this->admin->name,
             "image" => $this->image,
             "created_at" => $this->created_at,
-            "postComments" => $this->postComments,
+            "postComments" => $this->postComments->where('status', 'active'),
             'id' => $this->id,
         ];
     }
