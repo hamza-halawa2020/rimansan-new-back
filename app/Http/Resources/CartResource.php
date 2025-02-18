@@ -15,6 +15,11 @@ class CartResource extends JsonResource
     public function toArray(Request $request): array
     {
         // return parent::toArray($request);
+
+        $productPrice = $this->product->price;
+        $totalPrice = $productPrice * $this->quantity;
+
+
         return [
             'id' => $this->id,
             'product_id' => $this->product_id,
@@ -22,6 +27,7 @@ class CartResource extends JsonResource
             'user_id' => $this->user_id,
             'quantity' => $this->quantity,
             'created_at' => $this->created_at,
+            'total_price' => $totalPrice,
         ];
     }
 }
