@@ -22,13 +22,12 @@ class ShipmentController extends Controller
             $this->userId = auth()->id();
             return $next($request);
         });
-
     }
 
     public function index()
     {
         try {
-            $cities = Shipment::paginate(10);
+            $cities = Shipment::all();
             return ShipmentResource::collection($cities);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
