@@ -73,10 +73,7 @@ class CouponController extends Controller
                 return response()->json(['message' => 'Invalid or expired coupon.'], 400);
             }
 
-            return response()->json([
-                'message' => 'Coupon found!',
-                'coupon' => new CouponResource($coupon),
-            ], 200);
+            return new CouponResource($coupon);
         } catch (Exception $e) {
             return response()->json(['message' => 'An error occurred while fetching the coupon.'], 500);
         }
