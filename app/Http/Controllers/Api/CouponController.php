@@ -18,7 +18,7 @@ class CouponController extends Controller
      */
     function __construct()
     {
-        $this->middleware("auth:sanctum");
+        $this->middleware("auth:sanctum")->except('showCoupon');
         $this->middleware("limitReq");
     }
     public function index()
