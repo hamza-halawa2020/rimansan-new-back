@@ -22,13 +22,12 @@ class CityController extends Controller
             $this->userId = auth()->id();
             return $next($request);
         });
-
     }
 
     public function index()
     {
         try {
-            $cities = City::paginate(10);
+            $cities = City::all();
             return CityResource::collection($cities);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
