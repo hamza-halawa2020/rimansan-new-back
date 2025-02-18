@@ -16,7 +16,7 @@ class CartResource extends JsonResource
     {
         // return parent::toArray($request);
 
-        $productPrice = $this->product->price;
+        $productPrice = $this->product->priceAfterDiscount;
         $totalPrice = $productPrice * $this->quantity;
 
 
