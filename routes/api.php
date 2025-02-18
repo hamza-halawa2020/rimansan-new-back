@@ -72,6 +72,7 @@ Route::apiResource('clients', ClientController::class);
 
 /**************************** start coupon api ****************************/
 Route::apiResource('coupons', CouponController::class);
+Route::get('showCoupon', [CouponController::class, 'showCoupon']);
 /**************************** end coupon api ****************************/
 
 /**************************** start category api ****************************/

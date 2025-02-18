@@ -52,6 +52,38 @@ class CouponController extends Controller
             return response()->json($e->getMessage(), 500);
         }
     }
+
+
+
+    public function showCoupon(Request $request)
+    {
+        try {
+            $request->validate([
+                'code' => 'required|string',
+            ]);
+
+            $coupon = Coupon::where('code', $request->code)
+                ->where('is_active', true)
+                ->where('start_date', '<=', now())
+                ->where('end_date', '>=', now())
+                ->whereColumn('uses_count', '<', 'max_uses')
+                ->first();
+
+            if (!$coupon) {
+                return response()->json(['message' => 'Invalid or expired coupon.'], 400);
+            }
+
+            return response()->json([
+                'message' => 'Coupon found!',
+                'coupon' => new CouponResource($coupon),
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred while fetching the coupon.'], 500);
+        }
+    }
+
+
+
     public function show(string $id)
     {
         try {
