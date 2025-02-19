@@ -259,12 +259,18 @@ class OrderController extends Controller
             return response()->json($e, 500);
         }
     }
+
+
     private function calculateFinalTotal(Order $order, $couponDiscount, $shipmentCost)
     {
         $totalWithoutCoupon = $order->orderItems->sum('total');
-        $discountAmount = ($couponDiscount / 100) * $totalWithoutCoupon;
+        // $discountAmount = ($couponDiscount / 100) * $totalWithoutCoupon;
+        $discountAmount = $order->coupon;
         return $totalWithoutCoupon - $discountAmount + $shipmentCost;
     }
+
+
+
     private function processOrderItems(Order $order, array $orderItems)
     {
         foreach ($orderItems as $itemData) {
