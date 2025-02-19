@@ -89,7 +89,6 @@ class OrderController extends Controller
             DB::beginTransaction();
             $validatedData['user_id'] = $this->userId;
             $validatedData = $this->prepareOrderData($request);
-            // $order = Order::create($validatedData);
             $address = Address::create([
                 'address' => $validatedData['address'],
                 'country_id' => $validatedData['country_id'],
