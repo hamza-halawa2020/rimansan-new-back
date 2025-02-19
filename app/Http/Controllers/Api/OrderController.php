@@ -323,12 +323,12 @@ class OrderController extends Controller
     //     return $validatedData;
     // }
 
+
     private function prepareOrderData($request)
     {
-
         $validatedData = $request->validated();
 
-        // Check if coupon is expired
+        // Check if coupon is applied
         if (isset($validatedData['coupon_id'])) {
             $coupon = Coupon::findOrFail($validatedData['coupon_id']);
             $currentDate = now();
@@ -342,12 +342,12 @@ class OrderController extends Controller
                 throw new Exception("The selected coupon has reached its maximum usage limit.");
             }
 
-
             $validatedData['coupon_discount'] = $coupon->discount;
             $coupon->uses_count++;
             $coupon->save();  // Save the incremented coupon usage
         } else {
             $validatedData['coupon_discount'] = 0;
+            $validatedData['coupon_id'] = null; // Ensure coupon_id is null if not applied
         }
 
         // Find shipment info
