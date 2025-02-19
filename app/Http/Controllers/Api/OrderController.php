@@ -350,7 +350,7 @@ class OrderController extends Controller
             }
 
             // Apply coupon discount
-            $validatedData['coupon_discount'] = $coupon->discount;
+            $validatedData['coupon_discount'] = $coupon->discount ? $coupon->discount : 0;
             $coupon->uses_count++;
             $coupon->save();  // Save the incremented coupon usage
         } else {

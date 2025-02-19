@@ -31,7 +31,7 @@ class StoreOrderRequest extends FormRequest
             'country_id' => 'nullable|exists:countries,id',
             'city_id' => 'required|exists:cities,id',
             'address' => 'nullable|string',
-            'coupon_id' => 'nullable',
+            'coupon_id' => 'nullable|exists:coupons,id',
             'notes' => 'nullable|string',
             'payment_method' => 'required|in:cash_on_delivery,visa,vodafone_cash',
         ];
