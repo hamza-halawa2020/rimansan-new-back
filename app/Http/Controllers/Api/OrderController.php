@@ -347,7 +347,7 @@ class OrderController extends Controller
             $coupon->save();  // Save the incremented coupon usage
         } else {
             $validatedData['coupon_discount'] = 0;
-            $validatedData['coupon_id'] = null; // Ensure coupon_id is null if not applied
+            $validatedData['coupon_id'] = 0; // Ensure coupon_id is null if not applied
         }
 
         // Find shipment info
