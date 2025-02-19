@@ -265,7 +265,7 @@ class OrderController extends Controller
     {
         $totalWithoutCoupon = $order->orderItems->sum('total');
         // $discountAmount = ($couponDiscount / 100) * $totalWithoutCoupon;
-        $discountAmount = $order->coupon;
+        $discountAmount = $order->coupon->discount;
         return $totalWithoutCoupon - $discountAmount + $shipmentCost;
     }
 
