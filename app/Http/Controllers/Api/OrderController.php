@@ -20,6 +20,8 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PendingOrdersExport;
 use Illuminate\Support\Facades\Log;
 
+
+
 class OrderController extends Controller
 {
     private $userId;
@@ -324,49 +326,65 @@ class OrderController extends Controller
 
 
 
+
+
     private function prepareOrderData($request)
     {
         $validatedData = $request->validated();
+        Log::info('Order request validated', $validatedData);
 
         // Check if coupon is applied
-        if (isset($validatedData['coupon_id'])) {
+        if (!empty($validatedData['coupon_id'])) {
+            Log::info('Checking coupon', ['coupon_id' => $validatedData['coupon_id']]);
+
             $coupon = Coupon::find($validatedData['coupon_id']);
 
             // Validate coupon existence
             if (!$coupon) {
+                Log::error('Invalid coupon', ['coupon_id' => $validatedData['coupon_id']]);
                 throw new Exception("The selected coupon does not exist.");
             }
 
             $currentDate = now();
+            Log::info('Coupon found', ['coupon' => $coupon->toArray()]);
 
             // Validate coupon status and expiration
             if ($coupon->is_active != 1 || $coupon->end_date < $currentDate) {
+                Log::warning('Expired or inactive coupon', ['coupon_id' => $validatedData['coupon_id']]);
                 throw new Exception("The selected coupon is expired or inactive.");
             }
 
             // Validate coupon usage limit
             if ($coupon->uses_count >= $coupon->max_uses) {
+                Log::warning('Coupon usage limit reached', ['coupon_id' => $validatedData['coupon_id']]);
                 throw new Exception("The selected coupon has reached its maximum usage limit.");
             }
 
             // Apply coupon discount
-            $validatedData['coupon_discount'] = $coupon->discount ? $coupon->discount : 0;
-            $coupon->uses_count++;
-            $coupon->save();  // Save the incremented coupon usage
+            $validatedData['coupon_discount'] = $coupon->discount;
+            $coupon->increment('uses_count');
+            Log::info('Coupon applied successfully', ['discount' => $coupon->discount]);
         } else {
+            Log::info('No coupon applied');
             $validatedData['coupon_discount'] = 0;
-            $validatedData['coupon_id'] = null; // Ensure coupon_id is null if not applied
+            $validatedData['coupon_id'] = null;
         }
 
         // Find shipment info
+        Log::info('Fetching shipment info', ['city_id' => $validatedData['city_id']]);
+
         $city = City::findOrFail($validatedData['city_id']);
         $shipment = $city->shipments()->firstOrFail();
         $validatedData['shipment_id'] = $shipment->id;
         $validatedData['shipment_cost'] = $shipment->cost;
 
+        Log::info('Shipment details', ['shipment_id' => $shipment->id, 'cost' => $shipment->cost]);
+
         // Initialize total price and order number
         $validatedData['total_price'] = 0;
         $validatedData['order_number'] = 'ORD-' . Str::uuid();
+
+        Log::info('Final order data', $validatedData);
 
         return $validatedData;
     }
