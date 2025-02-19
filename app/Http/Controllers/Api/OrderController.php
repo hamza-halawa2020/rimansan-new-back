@@ -264,7 +264,11 @@ class OrderController extends Controller
     private function calculateFinalTotal(Order $order, $couponDiscount, $shipmentCost)
     {
         $totalWithoutCoupon = $order->orderItems->sum('total');
+
+        //percentage coupon like discount 50 % , 20%
         // $discountAmount = ($couponDiscount / 100) * $totalWithoutCoupon;
+
+        //static coupon like discount 50L.E , 80L.E
         $discountAmount = $order->coupon->discount;
         return $totalWithoutCoupon - $discountAmount + $shipmentCost;
     }
