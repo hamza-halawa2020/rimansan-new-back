@@ -8,7 +8,7 @@ use App\Http\Requests\UpdateCountryRequest;
 use App\Http\Resources\CountryResource;
 use App\Models\Country;
 use Exception;
-use Gate;
+use Illuminate\Support\Facades\Gate;
 
 class CountryController extends Controller
 {

@@ -9,7 +9,7 @@ use App\Models\Client;
 use App\Models\Coupon;
 use App\Models\Product;
 use Illuminate\Support\Str;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
@@ -130,7 +130,7 @@ class OrderController extends Controller
             DB::beginTransaction();
             $validatedData = $request->validated();
             $validatedData = $this->prepareOrderData($request);
-            
+
             $client = Client::create([
                 'name' => $validatedData['name'],
                 'email' => $validatedData['email'],
@@ -325,7 +325,7 @@ class OrderController extends Controller
 
     private function prepareOrderData($request)
     {
-        
+
         $validatedData = $request->validated();
 
         // Check if coupon is expired
@@ -342,7 +342,7 @@ class OrderController extends Controller
                 throw new Exception("The selected coupon has reached its maximum usage limit.");
             }
 
-          
+
             $validatedData['coupon_discount'] = $coupon->discount;
             $coupon->uses_count++;
             $coupon->save();  // Save the incremented coupon usage

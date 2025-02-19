@@ -178,6 +178,8 @@ Route::put('main-sliders-update/{id}', [MainSliderController::class, 'active']);
 
 /**************************** start carts api ****************************/
 Route::apiResource('carts', CartController::class);
+Route::delete('/cart_clear', [CartController::class, 'clearCart']);
+
 /**************************** end carts api ****************************/
 
 /**************************** start countries api ****************************/
