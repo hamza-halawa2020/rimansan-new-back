@@ -28,7 +28,7 @@ class PaymobIntegrationController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $payments = Payment::paginate(10);
+                $payments = Payment::orderBy('created_at', 'desc')->paginate(10);
                 return PaymentResource::collection($payments);
             } else {
                 return response()->json(['message' => 'not allow to show payments.'], 403);

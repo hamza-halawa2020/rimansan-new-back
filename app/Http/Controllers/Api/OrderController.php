@@ -53,7 +53,7 @@ class OrderController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $orders = Order::paginate(10);
+                $orders = Order::orderBy('created_at', 'desc')->paginate(10);
                 return OrderResource::collection($orders);
             } else {
                 return response()->json(['message' => 'not allow to show orders.'], 403);
