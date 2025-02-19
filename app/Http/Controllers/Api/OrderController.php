@@ -270,7 +270,9 @@ class OrderController extends Controller
         // $discountAmount = ($couponDiscount / 100) * $totalWithoutCoupon;
 
         //static coupon like discount 50L.E , 80L.E
-        $discountAmount = $order->coupon->discount;
+        // $discountAmount = $order->coupon->discount;
+        $discountAmount = $order->coupon ? $order->coupon->discount : 0;
+
         return $totalWithoutCoupon - $discountAmount + $shipmentCost;
     }
 
