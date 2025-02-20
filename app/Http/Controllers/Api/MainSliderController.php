@@ -29,7 +29,7 @@ class MainSliderController extends Controller
     public function index()
     {
         try {
-            $MainSliders = MainSlider::where('status', 'active')->all();
+            $MainSliders = MainSlider::where('status', 'active')->get();
             return MainSliderResource::collection($MainSliders);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
