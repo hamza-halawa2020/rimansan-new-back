@@ -74,7 +74,6 @@
                 <li><strong>Customer Name:</strong> {{ $order->user->name ?? $order->client->name }}</li>
                 <li><strong>Total Price:</strong> ${{ number_format($order->total_price, 2) }}</li>
                 <li><strong>Payment Method:</strong> {{ ucfirst($order->payment_method) }}</li>
-                <li><strong>Status:</strong>{{ $order->status }} </li>
             </ul>
         </div>
 
