@@ -129,6 +129,8 @@ Route::post('product-reviews-store', [ProductReviewController::class, 'storeByCl
 
 /**************************** start favourites api ****************************/
 Route::apiResource('favourites', FavouriteController::class);
+Route::delete('/fav_clear', [FavouriteController::class, 'clearFav']);
+
 /**************************** end favourites api ****************************/
 
 /**************************** start instructors api ****************************/

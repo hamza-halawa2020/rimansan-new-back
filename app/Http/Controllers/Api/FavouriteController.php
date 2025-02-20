@@ -70,4 +70,14 @@ class FavouriteController extends Controller
             return response()->json($e->getMessage(), 500);
         }
     }
+
+    public function clearFav()
+    {
+        try {
+            Favourite::where('user_id', $this->userId)->delete();
+            return response()->json(['message' => 'favourite cleared successfully'], 200);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }
