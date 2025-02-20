@@ -123,7 +123,11 @@ class OrderController extends Controller
             $adminEmails = User::where('type', 'admin')->pluck('email')->toArray();
             $userEmail = User::find($this->userId)->email;
             $allEmails = array_merge($adminEmails, [$userEmail]);
-            Mail::to($allEmails)->send(new OrderCreatedMail($order));
+            \Log::info('Emails:', $allEmails);
+            foreach ($allEmails as $email) {
+                Mail::to($email)->send(new OrderCreatedMail($order));
+            }
+
 
             return response()->json(['data' => new OrderResource($order)], 200);
         } catch (Exception $e) {
