@@ -30,7 +30,7 @@ class CartController extends Controller
     public function index()
     {
         try {
-            $Carts = Cart::where('user_id', $this->userId)->all();
+            $Carts = Cart::where('user_id', $this->userId)->get();
             return CartResource::collection($Carts);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
