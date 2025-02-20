@@ -29,7 +29,7 @@ class CourseReviewController extends Controller
     public function index()
     {
         try {
-            $reviews = CourseReview::where('status', 'active')->paginate(10);
+            $reviews = CourseReview::where('status', 'active')->all();
             return CourseReviewResource::collection($reviews);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
@@ -40,7 +40,7 @@ class CourseReviewController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $reviews = CourseReview::paginate(10);
+                $reviews = CourseReview::all();
                 return CourseReviewResource::collection($reviews);
             } else {
                 return response()->json(['message' => 'not allow .'], 403);

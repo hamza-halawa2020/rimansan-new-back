@@ -29,7 +29,7 @@ class FaqController extends Controller
     public function index()
     {
         try {
-            $Faqs = Faq::paginate(10);
+            $Faqs = Faq::all();
             return FaqResource::collection($Faqs);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);

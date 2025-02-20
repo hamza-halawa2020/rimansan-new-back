@@ -20,7 +20,7 @@ class ProductController extends Controller
     public function index()
     {
         try {
-            $products = Product::paginate(10);
+            $products = Product::all();
             return ProductResource::collection($products);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);

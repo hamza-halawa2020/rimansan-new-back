@@ -27,7 +27,7 @@ class InstructorController extends Controller
     public function index()
     {
         try {
-            $Instructors = Instructor::paginate(10);
+            $Instructors = Instructor::all();
             return InstructorResource::collection($Instructors);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);

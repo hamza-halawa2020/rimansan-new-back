@@ -24,7 +24,7 @@ class FavouriteController extends Controller
     public function index()
     {
         try {
-            $favourites = Favourite::where('user_id', $this->userId)->paginate(10);
+            $favourites = Favourite::where('user_id', $this->userId)->all();
             return FavouriteResource::collection($favourites);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);

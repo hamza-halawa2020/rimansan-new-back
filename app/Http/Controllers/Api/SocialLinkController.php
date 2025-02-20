@@ -22,7 +22,7 @@ class SocialLinkController extends Controller
     public function index()
     {
         try {
-            $SocialLinks = SocialLink::paginate(10);
+            $SocialLinks = SocialLink::all();
             return SocialLinkResource::collection($SocialLinks);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);

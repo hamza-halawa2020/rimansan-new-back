@@ -21,7 +21,7 @@ class PostController extends Controller
     public function index()
     {
         try {
-            $Posts = Post::paginate(10);
+            $Posts = Post::all();
             return PostResource::collection($Posts);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);

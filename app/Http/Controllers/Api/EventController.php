@@ -27,7 +27,7 @@ class EventController extends Controller
     public function index()
     {
         try {
-            $Events = Event::paginate(10);
+            $Events = Event::all();
             return EventResource::collection($Events);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);

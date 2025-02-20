@@ -26,7 +26,7 @@ class CertificationController extends Controller
     public function index()
     {
         try {
-            $Certifications = Certification::paginate(10);
+            $Certifications = Certification::all();
             return CertificationResource::collection($Certifications);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
