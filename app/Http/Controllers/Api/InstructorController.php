@@ -37,7 +37,7 @@ class InstructorController extends Controller
     public function randomInstructors()
     {
         try {
-            $Instructors = Instructor::inRandomOrder()->take(3)->get();
+            $Instructors = Instructor::inRandomOrder()->take(4)->get();
             return InstructorResource::collection($Instructors);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
