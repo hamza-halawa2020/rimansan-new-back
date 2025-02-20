@@ -24,7 +24,7 @@ class FavouriteController extends Controller
     public function index()
     {
         try {
-            $favourites = Favourite::where('user_id', $this->userId)->all();
+            $favourites = Favourite::where('user_id', $this->userId)->get();
             return FavouriteResource::collection($favourites);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
@@ -66,7 +66,6 @@ class FavouriteController extends Controller
             $favourite = Favourite::where('user_id', $this->userId)->findOrFail($id);
             $favourite->delete();
             return response()->json(['data' => 'favourite deleted successfully'], 200);
-
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
         }
