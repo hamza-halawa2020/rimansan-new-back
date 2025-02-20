@@ -25,7 +25,7 @@ class ProductReviewController extends Controller
     public function index()
     {
         try {
-            $reviews = ProductReview::where('status', 'active')->all();
+            $reviews = ProductReview::where('status', 'active')->get();
             return ProductReviewResource::collection($reviews);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
