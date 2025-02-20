@@ -27,9 +27,16 @@ class ProductResource extends JsonResource
             "productImages" => $this->productImages,
             // "productReviews" => $this->productReviews,
             "productReviews" => ProductReviewResource::collection($this->productReviews->where('status', 'active')),
+
             "relatedProducts" => ProductResource::collection(
-                $this->category->products->where('id', '!=', $this->id)->get()
+                $this->category
+                    ->products()
+                    ->where('id', '!=', $this->id)
+                    ->inRandomOrder()
+                    ->limit(5)
+                    ->get()
             ),
+
             "admin" => $this->admin->name,
             "admin_id" => $this->admin->id,
             "created_at" => $this->created_at,
