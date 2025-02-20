@@ -35,7 +35,9 @@ class ProductResource extends JsonResource
                     ->inRandomOrder()
                     ->limit(5)
                     ->get()
+                    ->makeHidden(['relatedProducts']) 
             ),
+
 
             "admin" => $this->admin->name,
             "admin_id" => $this->admin->id,
