@@ -21,7 +21,7 @@ class AddSideBarBannerController extends Controller
     public function index()
     {
         try {
-            $addSideBarBanner = AddSideBarBanner::where('status', 'active')->all();
+            $addSideBarBanner = AddSideBarBanner::where('status', 'active')->get();
             return AddSideBarBannerResource::collection($addSideBarBanner);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
