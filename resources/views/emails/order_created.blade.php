@@ -66,7 +66,6 @@
 <body>
     <div class="container">
         <h1>New Order Created</h1>
-        <p>Hello <strong>{{ $recipientName }}</strong>,</p>
         <p>A new order has been created with the following details:</p>
 
         <div class="order-details">
