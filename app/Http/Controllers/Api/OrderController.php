@@ -19,6 +19,7 @@ use Exception;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PendingOrdersExport;
 use App\Mail\OrderCreatedMail;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -119,7 +120,10 @@ class OrderController extends Controller
             }
             DB::commit();
 
-            Mail::to('h.halawa2020@gmail.com')->send(new OrderCreatedMail($order));
+            $adminEmails = User::where('type', 'admin')->pluck('email')->toArray();
+            $userEmail = User::find($this->userId)->email;
+            $allEmails = array_merge($adminEmails, [$userEmail]);
+            Mail::to($allEmails)->send(new OrderCreatedMail($order));
 
             return response()->json(['data' => new OrderResource($order)], 200);
         } catch (Exception $e) {
