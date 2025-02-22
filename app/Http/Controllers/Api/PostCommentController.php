@@ -32,7 +32,7 @@ class PostCommentController extends Controller
     public function index()
     {
         try {
-            $comments = PostComment::where('status', 'active')->all();
+            $comments = PostComment::where('status', 'active')->orderBy('created_at', 'desc')->get();
             return PostCommentResource::collection($comments);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
