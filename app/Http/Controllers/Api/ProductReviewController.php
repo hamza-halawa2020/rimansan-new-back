@@ -36,7 +36,7 @@ class ProductReviewController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $reviews = ProductReview::paginate(10);
+                $reviews = ProductReview::orderBy('created_at', 'desc')->paginate(10);
                 return ProductReviewResource::collection($reviews);
             } else {
                 return response()->json(['message' => 'not allow .'], 403);
