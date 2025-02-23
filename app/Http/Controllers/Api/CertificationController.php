@@ -15,7 +15,7 @@ class CertificationController extends Controller
     private $userId;
     function __construct()
     {
-        $this->middleware("auth:sanctum")->except('index', 'show');
+        $this->middleware("auth:sanctum")->except('index', 'show', 'showBySerialNumber', 'downloadFile');
         $this->middleware("limitReq");
         $this->middleware(function ($request, $next) {
             $this->userId = auth()->id();
