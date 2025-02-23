@@ -71,40 +71,40 @@ class CertificationController extends Controller
         try {
             if (Gate::allows("is-admin")) {
                 $Certification = Certification::find($id);
-    
+
                 // Check if the Certification exists
                 if (!$Certification) {
                     return response()->json(['message' => 'Certification not found.'], 404);
                 }
-    
+
                 $validatedData = $request->validated();
-    
+
                 if ($request->hasFile('file')) {
                     $image = $request->file('file');
                     $extension = $image->getClientOriginalExtension();
                     $filename = time() . '_' . uniqid() . '.' . $extension;
                     $folderPath = 'images/Certifications/';
-    
+
                     // Delete the old image if it exists
                     if ($Certification->file && $Certification->file !== 'default.png' && file_exists(public_path($folderPath . $Certification->file))) {
                         unlink(public_path($folderPath . $Certification->file));
                     }
-    
+
                     $image->move(public_path($folderPath), $filename);
                     $validatedData['file'] = $filename;
                 }
-    
+
                 $Certification->update($validatedData);
-    
+
                 return response()->json(new CertificationResource($Certification), 200);
             }
-    
+
             return response()->json(['message' => 'Not allowed to update Certifications.'], 403);
         } catch (Exception $e) {
             return response()->json(['message' => 'An error occurred while updating the Certification.'], 500);
         }
     }
-    
+
 
 
     public function destroy(string $id)
@@ -118,6 +118,39 @@ class CertificationController extends Controller
             return response()->json(['message' => 'Not allowed to update Certifications.'], 403);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);
+        }
+    }
+
+    public function showBySerialNumber(string $serialNumber)
+    {
+        try {
+            $certificate = Certification::where('serial_number', $serialNumber)->first();
+
+            if (!$certificate) {
+                return response()->json(['error' => 'Certificate not found'], 404);
+            }
+
+            return new CertificationResource($certificate);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+
+    public function downloadFile(string $id)
+    {
+        try {
+            $certificate = Certification::findOrFail($id);
+
+            $filePath = public_path('images/Certifications/' . $certificate->file);
+
+            if (!file_exists($filePath)) {
+                return response()->json(['error' => 'File not found'], 404);
+            }
+
+            return response()->download($filePath, $certificate->file);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 }
