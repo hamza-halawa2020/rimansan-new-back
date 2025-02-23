@@ -150,6 +150,8 @@ Route::get('random-courses', [CourseController::class, 'randomCourses']);
 /**************************** start certifications api ****************************/
 Route::apiResource('certifications', CertificationController::class);
 Route::post('certifications/{id}', [CertificationController::class, 'update']);
+Route::get('certificates-serial/{serialNumber}', [CertificationController::class, 'showBySerialNumber']);
+Route::get('certificates-downloadFile/{id}', [CertificationController::class, 'downloadFile']);
 
 /**************************** end certifications api ****************************/
 
