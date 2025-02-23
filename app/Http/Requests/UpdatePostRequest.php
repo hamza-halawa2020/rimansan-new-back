@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+
 class UpdatePostRequest extends FormRequest
 {
     /**
@@ -23,8 +24,8 @@ class UpdatePostRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'string|max:255',
-            'content' => 'string|max:255',
+            'title' => 'string',
+            'content' => 'string',
             'category_id' => 'exists:categories,id',
             'tag_id' => 'exists:tags,id',
         ];

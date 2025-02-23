@@ -24,7 +24,7 @@ class UpdateCourseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'string|max:255',
+            'title' => 'string',
             'description' => 'string',
             'video_url' => 'url',
             'certifications' => '',

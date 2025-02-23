@@ -24,7 +24,7 @@ class StoreCertificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'serial_number' => 'required|string|max:255',
+            'serial_number' => 'required|string',
             'user_id' => 'required|exists:users,id',
         ];
     }

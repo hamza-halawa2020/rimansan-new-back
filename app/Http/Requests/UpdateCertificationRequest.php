@@ -24,7 +24,7 @@ class UpdateCertificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'serial_number' => 'string|max:255',
+            'serial_number' => 'string',
             'user_id' => 'exists:users,id',
         ];
     }

@@ -24,8 +24,8 @@ class UpdateSocialLinkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'nullable|string|max:255',
-            'url' => 'nullable|string|max:255',
+            'name' => 'nullable|string',
+            'url' => 'nullable|string',
         ];
     }
     protected function failedValidation(Validator $validator)

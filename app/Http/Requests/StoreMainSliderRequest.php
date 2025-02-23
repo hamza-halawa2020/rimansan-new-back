@@ -26,7 +26,7 @@ class StoreMainSliderRequest extends FormRequest
         return [
             'title' => 'nullable|string',
             'description' => 'nullable|string',
-            'link' => 'nullable|string|max:255',
+            'link' => 'nullable|string',
         ];
     }
     protected function failedValidation(Validator $validator)

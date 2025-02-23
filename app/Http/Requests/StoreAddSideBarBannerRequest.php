@@ -24,7 +24,7 @@ class StoreAddSideBarBannerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'link' => 'required|string|max:255',
+            'link' => 'required|string',
             'status' => 'required',
         ];
     }
