@@ -153,18 +153,32 @@ class OrderController extends Controller
                 'country_id' => $validatedData['country_id'],
                 'city_id' => $validatedData['city_id'],
             ]);
+            // $order = Order::create([
+            //     'client_id' => $client->id,
+            //     'address_id' => $address->id,
+            //     'coupon_id' => $validatedData['coupon_id'],
+            //     'shipment_id' => $validatedData['shipment_id'],
+            //     'notes' => $validatedData['notes'],
+            //     'payment_method' => $validatedData['payment_method'],
+            //     'coupon_discount' => $validatedData['coupon_discount'],
+            //     'shipment_cost' => $validatedData['shipment_cost'],
+            //     'total_price' => $validatedData['total_price'],
+            //     'order_number' => $validatedData['order_number'],
+            // ]);
+
             $order = Order::create([
                 'client_id' => $client->id,
                 'address_id' => $address->id,
-                'coupon_id' => $validatedData['coupon_id'],
+                'coupon_id' => $validatedData['coupon_id'] ?? null,
                 'shipment_id' => $validatedData['shipment_id'],
-                'notes' => $validatedData['notes'],
+                'notes' => $validatedData['notes'] ?? null,
                 'payment_method' => $validatedData['payment_method'],
-                'coupon_discount' => $validatedData['coupon_discount'],
+                'coupon_discount' => $validatedData['coupon_discount'] ?? 0,
                 'shipment_cost' => $validatedData['shipment_cost'],
                 'total_price' => $validatedData['total_price'],
                 'order_number' => $validatedData['order_number'],
             ]);
+
 
 
 
