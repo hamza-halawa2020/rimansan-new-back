@@ -51,12 +51,13 @@
         <p class="code">{{ $verificationCode }}</p>
         <p>This verification code will expire in 5 minutes.</p>
         <div class="footer">
+            <h4>Please Go To This Link...</h4>
+            <a href="{{ url('https://new-riman-san.rimansan.net/verify') }}">Verify Code</a>
+        </div>
+        <div class="footer">
             <p>If you didn't request this, please ignore this email.</p>
         </div>
-        <h4>Please Go To This Link...</h4>
-        <div class="footer">
-            <a href="{{ url('https://new-riman-san.rimansan.net/verify') }}">Reset Password</a>
-        </div>
+       
     </div>
 </body>
 
