@@ -49,11 +49,11 @@
             use the verification code below to complete the process:
         </p>
         <p class="code">{{ $verificationCode }}</p>
+        <h4>Please Go To This Link...</h4>
         <div class="footer">
             <a href="{{ url('https://new-riman-san.rimansan.net/verify') }}">Verify Code</a>
         </div>
         <p>This verification code will expire in 5 minutes.</p>
-        <h4>Please Go To This Link...</h4>
 
         <div class="footer">
             <p>If you didn't request this, please ignore this email.</p>
