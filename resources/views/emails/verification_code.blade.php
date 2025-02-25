@@ -53,6 +53,10 @@
         <div class="footer">
             <p>If you didn't request this, please ignore this email.</p>
         </div>
+        <h4>Please Go To This Link...</h4>
+        <div class="footer">
+            <a href="{{ url('https://new-riman-san.rimansan.net/verify') }}">Reset Password</a>
+        </div>
     </div>
 </body>
 
