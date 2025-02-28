@@ -69,7 +69,7 @@ class OrderController extends Controller
     public function myOrders()
     {
         try {
-            $orders = Order::where('user_id', $this->userId,)->paginate(10);
+            $orders = Order::where('user_id', $this->userId,)->orderBy('created_at', 'desc')->paginate(10);
             return OrderResource::collection($orders);
         } catch (Exception $e) {
             return response()->json($e, 500);
