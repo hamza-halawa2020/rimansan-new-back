@@ -33,9 +33,13 @@ class UpdateUserRequest extends FormRequest
                 'sometimes',
                 'required',
                 'string',
-                'email' . $this->route('id'),
-
+                'email',
+                Rule::unique('users', 'email')->ignore($this->route('id')),
             ],
+
+
+
+
             'image' => Gate::allows('is-admin') ? 'nullable' : 'sometimes|required|image|max:10240',
             'type' => 'sometimes|required|string|in:admin,user',
             'phone' => [
