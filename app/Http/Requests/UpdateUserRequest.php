@@ -41,8 +41,7 @@ class UpdateUserRequest extends FormRequest
             'phone' => [
                 'sometimes',
                 'required',
-                'min:8',
-                'integer' . $this->route('id'),
+                'min:8' . $this->route('id'),
             ],
             'password' => Gate::allows('is-admin') ? 'nullable' : 'sometimes|string|min:8',
         ];
