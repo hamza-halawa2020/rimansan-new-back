@@ -32,6 +32,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\TranslationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -223,3 +224,11 @@ Route::prefix('payment')->group(function () {
     Route::post('/callback', [PaymobIntegrationController::class, 'callback']);
 });
 /**************************** end paymob integration api ****************************/
+
+
+
+Route::prefix('translations')->group(function () {
+    Route::get('/index', [TranslationController::class, 'index']); // Fetch translations
+    Route::post('/update', [TranslationController::class, 'update']); // Update translations
+    Route::get('/download/{lang}', [TranslationController::class, 'download']); // Download JSON file
+});
