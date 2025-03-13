@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 
 class TranslationController extends Controller
 {
@@ -18,7 +19,8 @@ class TranslationController extends Controller
 
 
     private $langs = ['ar', 'en'];
-    private $basePath = 'i18n/'; // Relative to public/ directory
+    // private $basePath = 'i18n/'; // Relative to public/ directory
+    private $basePath = '../frontEnd/src/assets/i18n/';
 
     public function index()
     {
@@ -42,15 +44,21 @@ class TranslationController extends Controller
             'translations' => 'required|array',
         ]);
 
-        $filePath = public_path($this->basePath . "{$data['lang']}.json");
+        // $filePath = public_path($this->basePath . "{$data['lang']}.json");
+        $filePath = base_path($this->basePath . "{$data['lang']}.json");
+
 
         // Ensure the directory exists
         if (!is_dir(dirname($filePath))) {
             mkdir(dirname($filePath), 0755, true);
         }
 
+
+        File::ensureDirectoryExists(base_path($this->basePath));
+        File::put($filePath, json_encode($data['translations'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
         // Write the JSON file
-        file_put_contents($filePath, json_encode($data['translations'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        // file_put_contents($filePath, json_encode($data['translations'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
         return response()->json(['message' => 'Translation updated successfully'])
             ->header('Access-Control-Allow-Origin', '*'); // Add CORS header
