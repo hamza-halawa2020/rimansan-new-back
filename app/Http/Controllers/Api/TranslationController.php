@@ -20,7 +20,8 @@ class TranslationController extends Controller
 
     private $langs = ['ar', 'en'];
     // private $basePath = 'i18n/'; // Relative to public/ directory
-    private $basePath = '../frontEnd/src/assets/i18n/';
+    // private $basePath = '../frontEnd/src/assets/i18n/';
+    private $basePath = 'new-riman-san/assets/i18nsss/';
 
     public function index()
     {
