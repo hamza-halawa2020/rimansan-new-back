@@ -7,6 +7,16 @@ use Illuminate\Http\Request;
 
 class TranslationController extends Controller
 {
+
+
+    function __construct()
+    {
+        $this->middleware("auth:sanctum")->except(['index', 'show']);
+        $this->middleware("limitReq");
+    }
+
+
+
     private $langs = ['ar', 'en'];
     private $basePath = 'i18n/'; // Relative to public/ directory
 
@@ -33,7 +43,7 @@ class TranslationController extends Controller
         ]);
 
         $filePath = public_path($this->basePath . "{$data['lang']}.json");
-        
+
         // Ensure the directory exists
         if (!is_dir(dirname($filePath))) {
             mkdir(dirname($filePath), 0755, true);
