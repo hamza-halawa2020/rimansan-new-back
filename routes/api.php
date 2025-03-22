@@ -78,6 +78,8 @@ Route::post('showCoupon', [CouponController::class, 'showCoupon']);
 
 /**************************** start category api ****************************/
 Route::apiResource('categories', CategoryController::class);
+Route::post('categories/{id}', [CategoryController::class, 'update']);
+
 /**************************** end category api ****************************/
 
 /**************************** start tag api ****************************/
