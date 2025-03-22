@@ -20,7 +20,6 @@ class CategoryController extends Controller
     {
         $this->middleware("auth:sanctum")->except(['index', 'show']);
         $this->middleware("limitReq");
-
     }
 
     public function index()
@@ -40,6 +39,16 @@ class CategoryController extends Controller
         try {
             $validatedData = $request->validated();
             if (Gate::allows("is-admin")) {
+
+                if ($request->hasFile('image')) {
+                    $image = $request->file('image');
+                    $extension = $image->getClientOriginalExtension();
+                    $filename = time() . '_' . uniqid() . '.' . $extension;
+                    $folderPath = 'images/categories/';
+                    $image->move(public_path($folderPath), $filename);
+                }
+
+                $validatedData['image'] = $filename ?? 'default.png';
                 $category = Category::create($validatedData);
                 return response()->json(['data' => new CategoryResource($category)], 200);
             } else {
@@ -73,6 +82,20 @@ class CategoryController extends Controller
             $validatedData = $request->validated();
             if (Gate::allows("is-admin")) {
                 $category = Category::findOrFail($id);
+
+                if ($request->hasFile('image')) {
+                    $image = $request->file('image');
+                    $extension = $image->getClientOriginalExtension();
+                    $filename = time() . '_' . uniqid() . '.' . $extension;
+                    $folderPath = 'images/categories/';
+
+                    if ($category->image && $category->image !== 'images/categories/default.png' && file_exists(public_path($category->image))) {
+                        unlink(public_path($category->image));
+                    }
+
+                    $image->move(public_path($folderPath), $filename);
+                    $validatedData['image'] = $filename;
+                }
                 $category->update($validatedData);
                 return response()->json(['data' => new CategoryResource($category)], 200);
             } else {
