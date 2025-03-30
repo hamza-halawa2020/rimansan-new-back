@@ -33,7 +33,7 @@ class ProductResource extends JsonResource
                     ->products()
                     ->where('id', '!=', $this->id)
                     ->inRandomOrder()
-                    ->limit(3)
+                    // ->limit(3)
                     ->get()
             ),
 
