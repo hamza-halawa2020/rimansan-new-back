@@ -20,20 +20,41 @@ class TranslationController extends Controller
     private $langs = ['ar', 'en'];
     private $basePath = 'i18n/'; // Relative to public/ directory
 
+    // public function index()
+    // {
+    //     $translations = [];
+    //     foreach ($this->langs as $lang) {
+    //         $filePath = public_path($this->basePath . "{$lang}.json");
+    //         if (file_exists($filePath)) {
+    //             $translations[$lang] = json_decode(file_get_contents($filePath), true);
+    //         } else {
+    //             $translations[$lang] = [];
+    //         }
+    //     }
+    //     return response()->json($translations)
+    //         ->header('Access-Control-Allow-Origin', '*'); // Add CORS header
+    // }
+
     public function index()
-    {
-        $translations = [];
-        foreach ($this->langs as $lang) {
-            $filePath = public_path($this->basePath . "{$lang}.json");
-            if (file_exists($filePath)) {
-                $translations[$lang] = json_decode(file_get_contents($filePath), true);
-            } else {
-                $translations[$lang] = [];
-            }
+{
+    $translations = [];
+    $version = []; // لتخزين إصدار كل لغة
+    foreach ($this->langs as $lang) {
+        $filePath = public_path($this->basePath . "{$lang}.json");
+        if (file_exists($filePath)) {
+            $translations[$lang] = json_decode(file_get_contents($filePath), true);
+            // استخدام تاريخ التعديل الأخير كإصدار
+            $version[$lang] = filemtime($filePath); // Unix timestamp لآخر تعديل
+        } else {
+            $translations[$lang] = [];
+            $version[$lang] = '0'; // إصدار افتراضي لو الملف مش موجود
         }
-        return response()->json($translations)
-            ->header('Access-Control-Allow-Origin', '*'); // Add CORS header
     }
+    return response()->json([
+        'translations' => $translations,
+        'version' => $version
+    ])->header('Access-Control-Allow-Origin', '*');
+}
 
     public function update(Request $request)
     {
