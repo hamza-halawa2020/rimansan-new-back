@@ -24,6 +24,7 @@ class ProductResource extends JsonResource
             "discount" => $this->discount,
             "priceAfterDiscount" => $this->priceAfterDiscount,
             "category" => $this->category->name,
+            "category_id" => $this->category->id,
             "productImages" => $this->productImages,
             // "productReviews" => $this->productReviews,
             "productReviews" => ProductReviewResource::collection($this->productReviews->where('status', 'active')),
