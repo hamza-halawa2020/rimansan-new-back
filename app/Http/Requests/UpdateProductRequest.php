@@ -27,8 +27,8 @@ class UpdateProductRequest extends FormRequest
             'title' => 'string',
             'stock' => 'boolean',
             'description' => 'string',
-            'priceBeforeDiscount' => 'numeric|min:0',
-            'discount' => 'nullable|numeric|min:0|max:1000',
+            'priceBeforeDiscount' => 'numeric|min:0|max:10000',
+            'discount' => 'nullable|numeric|min:0|max:10000',
             'category_id' => 'exists:categories,id',
         ];
     }
