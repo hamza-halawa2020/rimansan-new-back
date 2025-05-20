@@ -123,9 +123,11 @@ class OrderController extends Controller
             $adminEmails = User::where('type', 'admin')->pluck('email')->toArray();
             $userEmail = User::find($this->userId)->email;
             $allEmails = array_merge($adminEmails, [$userEmail]);
+            Log::info('All emails: ' . json_encode($allEmails));
             foreach ($allEmails as $email) {
                 Mail::to($email)->send(new OrderCreatedMail($order));
             }
+            Log::info('Order created successfully: ' . json_encode($order));
 
 
             return response()->json(['data' => new OrderResource($order)], 200);
@@ -191,6 +193,18 @@ class OrderController extends Controller
                 $order->update(['status' => 'Awaiting Payment']);
             }
             DB::commit();
+
+            $adminEmails = User::where('type', 'admin')->pluck('email')->toArray();
+            Log::info('Admin emails: ' . json_encode($adminEmails));
+            $userEmail = $client->email;
+            Log::info('User email: ' . $userEmail);
+            $allEmails = array_merge($adminEmails, [$userEmail]);
+            Log::info('All emails: ' . json_encode($allEmails));
+            foreach ($allEmails as $email) {
+                Mail::to($email)->send(new OrderCreatedMail($order));
+            }
+            Log::info('Order created successfully: ' . json_encode($order));
+
             return response()->json(['data' => new OrderResource($order)], 200);
         } catch (Exception $e) {
             DB::rollBack();

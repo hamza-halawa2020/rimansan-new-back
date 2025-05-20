@@ -10,6 +10,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use Exception;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
@@ -54,6 +55,14 @@ class UserController extends Controller
                     'slug' => Str::slug($validatedData['name']),
                     'image' => 'default.png',
                 ]);
+
+                $verificationSent = app(VerificationCodeController::class)
+                ->sendVerificationCode(new Request(['email' => $user->email]));
+
+                if (!$verificationSent) {
+                    throw new Exception("Failed to send verification email");
+                }
+
                 return response()->json(['data' => new UserResource($user)], 200);
             } else {
                 return response()->json(['message' => 'not allow to show users.'], 403);
