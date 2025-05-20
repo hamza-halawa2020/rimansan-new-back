@@ -50,7 +50,7 @@
 
         <p class="code">
 
-            <a href="{{ url('https://new-riman-san.rimansan.net/password-reset?token=' . $token) }}">Reset Password</a>
+            <a href="{{ url('https://rimansan.net/password-reset?token=' . $token) }}">Reset Password</a>
 
         </p>
 

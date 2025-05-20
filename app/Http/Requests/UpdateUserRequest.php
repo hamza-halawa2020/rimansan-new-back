@@ -34,7 +34,7 @@ class UpdateUserRequest extends FormRequest
                 'required',
                 'string',
                 'email',
-                Rule::unique('users', 'email')->ignore($this->route('id')),
+                Rule::unique('users', 'email')->ignore($this->user()->id),
             ],
 
             'image' => Gate::allows('is-admin') ? 'nullable' : 'sometimes|required|image|max:10240',
@@ -44,7 +44,7 @@ class UpdateUserRequest extends FormRequest
                 'required',
                 'min:8',
                 'numeric',
-                Rule::unique('users', 'phone')->ignore($this->route('id')),
+                Rule::unique('users', 'phone')->ignore($this->user()->id),
             ],
 
             'password' => Gate::allows('is-admin') ? 'nullable' : 'sometimes|string|min:8',

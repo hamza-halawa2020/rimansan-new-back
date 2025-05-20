@@ -51,7 +51,7 @@
         <p class="code">{{ $verificationCode }}</p>
         <h4>Please Go To This Link...</h4>
         <div class="footer">
-            <a href="{{ url('https://new-riman-san.rimansan.net/verify') }}">Verify Code</a>
+            <a href="{{ url('https://rimansan.net/verify') }}">Verify Code</a>
         </div>
         <p>This verification code will expire in 5 minutes.</p>
 
