@@ -85,7 +85,7 @@ class UserController extends Controller
     public function profile()
     {
         try {
-            $user = User::findOrFail($this->userId);
+            $user = User::with('addresses','points')->findOrFail($this->userId);
             return new UserResource($user);
         } catch (Exception $e) {
             return response()->json($e->getMessage(), 500);

@@ -32,6 +32,7 @@ class UpdateCourseRequest extends FormRequest
             'instructor_id' => 'exists:instructors,id',
             'category_id' => 'exists:categories,id',
             'tag_id' => 'exists:tags,id',
+            'image' => 'nullable|image',
         ];
     }
 

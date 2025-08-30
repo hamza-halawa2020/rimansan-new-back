@@ -6,14 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCertificationRequest;
 use App\Http\Requests\UpdateCertificationRequest;
 use App\Http\Resources\CertificationResource;
-use App\Models\Certification;
+use App\Services\CertificationService;
+use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Support\Facades\Gate;
 
 class CertificationController extends Controller
 {
+    use ApiResponse;
     private $userId;
-    function __construct()
+    private CertificationService $certificationService;
+    function __construct(CertificationService $certificationService)
     {
         $this->middleware("auth:sanctum")->except('index', 'show', 'showBySerialNumber', 'downloadFile');
         $this->middleware("limitReq");
@@ -21,89 +24,62 @@ class CertificationController extends Controller
             $this->userId = auth()->id();
             return $next($request);
         });
+        $this->certificationService = $certificationService;
     }
 
     public function index()
     {
         try {
-            $Certifications = Certification::all();
-            return CertificationResource::collection($Certifications);
+            $Certifications = $this->certificationService->index();
+            return $this->success(CertificationResource::collection($Certifications));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
+
 
     public function store(StoreCertificationRequest $request)
     {
         try {
+            $validatedData = $request->validated();
             if (Gate::allows("is-admin")) {
-                $validatedData = $request->validated();
-
-                if ($request->hasFile('file')) {
-                    $image = $request->file('file');
-                    $extension = $image->getClientOriginalExtension();
-                    $filename = time() . '_' . uniqid() . '.' . $extension;
-                    $folderPath = 'images/Certifications/';
-                    $image->move(public_path($folderPath), $filename);
-                }
-                $validatedData['file'] = $filename ?? 'default.png';
-                $Certification = Certification::create($validatedData);
-                return response()->json(['data' => new CertificationResource($Certification),], 201);
+                $certifiaction = $this->certificationService->store($validatedData);
+                return $this->success(new CertificationResource($certifiaction), 'certifiaction created successfully', 201);
+            } else {
+                return $this->errro('not allow to Store certifiaction.', 403);
             }
-            return response()->json(['message' => 'Not allowed to store Certifications.'], 403);
         } catch (Exception $e) {
-            return response()->json(['message' => 'Failed to add Certification. Please try again later.'], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function show(string $id)
     {
         try {
-            $Certification = Certification::findOrFail($id);
-            return new CertificationResource($Certification);
+            $certifiaction = $this->certificationService->show($id);
+            return $this->success(new CertificationResource($certifiaction));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
-    public function update(UpdateCertificationRequest $request, $id)
+
+
+    public function update(UpdateCertificationRequest $request, string $id)
     {
         try {
-            if (Gate::allows("is-admin")) {
-                $Certification = Certification::find($id);
-
-                // Check if the Certification exists
-                if (!$Certification) {
-                    return response()->json(['message' => 'Certification not found.'], 404);
-                }
-
-                $validatedData = $request->validated();
-
-                if ($request->hasFile('file')) {
-                    $image = $request->file('file');
-                    $extension = $image->getClientOriginalExtension();
-                    $filename = time() . '_' . uniqid() . '.' . $extension;
-                    $folderPath = 'images/Certifications/';
-
-                    // Delete the old image if it exists
-                    if ($Certification->file && $Certification->file !== 'default.png' && file_exists(public_path($folderPath . $Certification->file))) {
-                        unlink(public_path($folderPath . $Certification->file));
-                    }
-
-                    $image->move(public_path($folderPath), $filename);
-                    $validatedData['file'] = $filename;
-                }
-
-                $Certification->update($validatedData);
-
-                return response()->json(new CertificationResource($Certification), 200);
+            $validatedData = $request->validated();
+            if (!Gate::allows("is-admin")) {
+                return $this->error('Not allowed to update Certification.', 403);
             }
 
-            return response()->json(['message' => 'Not allowed to update Certifications.'], 403);
+            $Certification = $this->certificationService->update($validatedData, $id);
+            return $this->success(new CertificationResource($Certification), 'Certification updated successfully');
         } catch (Exception $e) {
-            return response()->json(['message' => 'An error occurred while updating the Certification.'], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
+
 
 
 
@@ -111,28 +87,26 @@ class CertificationController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $Certification = Certification::findOrFail($id);
-                $Certification->delete();
-                return response()->json(['data' => 'Certification deleted successfully'], 200);
+                $this->certificationService->destroy($id);
+                return $this->success(null, 'Certification deleted successfully', 204);
+            } else {
+                return $this->error('not allow to delete Certification.', 403);
             }
-            return response()->json(['message' => 'Not allowed to update Certifications.'], 403);
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function showBySerialNumber(string $serialNumber)
     {
         try {
-            $certificate = Certification::where('serial_number', $serialNumber)->first();
-
-            if (!$certificate) {
-                return response()->json(['error' => 'Certificate not found'], 404);
+            $Certification = $this->certificationService->showBySerialNumber($serialNumber);
+            if (!$Certification) {
+                return $this->error('Certificate not found', 404);
             }
-
-            return new CertificationResource($certificate);
+            return $this->success(new CertificationResource($Certification), 'Certification fetched successfully');
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -140,17 +114,15 @@ class CertificationController extends Controller
     public function downloadFile(string $id)
     {
         try {
-            $certificate = Certification::findOrFail($id);
 
-            $filePath = public_path('images/Certifications/' . $certificate->file);
+            $file = $this->certificationService->downloadFile($id);
 
-            if (!file_exists($filePath)) {
-                return response()->json(['error' => 'File not found'], 404);
+            if (!file_exists($file['path'])) {
+                return $this->error('Certificate not found', 404);
             }
-
-            return response()->download($filePath, $certificate->file);
+            return response()->download($file['path'], $file['filename']);
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

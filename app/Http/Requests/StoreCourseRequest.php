@@ -32,6 +32,7 @@ class StoreCourseRequest extends FormRequest
             'instructor_id' => 'required|exists:instructors,id',
             'category_id' => 'required|exists:categories,id',
             'tag_id' => 'required|exists:tags,id',
+            'image' => 'nullable|image',
         ];
     }
 

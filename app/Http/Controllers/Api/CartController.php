@@ -7,17 +7,17 @@ use App\Http\Requests\StoreCartRequest;
 use App\Http\Requests\UpdateCartRequest;
 use App\Http\Resources\CartResource;
 use App\Models\Cart;
+use App\Services\CartService;
+use App\Traits\ApiResponse;
 use Exception;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-
 
 class CartController extends Controller
 {
-
+    use ApiResponse;
 
     private $userId;
-    function __construct()
+    private CartService $cartService;
+    function __construct(CartService $cartService)
     {
         $this->middleware("auth:sanctum");
         $this->middleware("limitReq");
@@ -25,15 +25,17 @@ class CartController extends Controller
             $this->userId = auth()->id();
             return $next($request);
         });
+
+        $this->cartService = $cartService;
     }
 
     public function index()
     {
         try {
-            $Carts = Cart::where('user_id', $this->userId)->get();
-            return CartResource::collection($Carts);
+            $Carts = $this->cartService->index($this->userId);
+            return $this->success(CartResource::collection($Carts));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -46,24 +48,23 @@ class CartController extends Controller
 
             $exists = Cart::where('user_id', $this->userId)->where('product_id', $validatedData['product_id'])->exists();
             if ($exists) {
-                return response()->json(['message' => 'This product is already in your Carts.'], 409);
+                return $this->error('This product is already in your Carts.', 409);
             }
 
-            $Cart = Cart::create($validatedData);
-            return response()->json(['data' => new CartResource($Cart),], 201);
+            $Cart = $this->cartService->store($validatedData);
+            return $this->success(new CartResource($Cart), 201);
         } catch (Exception $e) {
-            Log::error('Failed to add product to cart: ' . $e->getMessage());
-            return response()->json(['message' => 'Failed to add Cart. Please try again later.'], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function show(string $id)
     {
         try {
-            $Cart = Cart::where('user_id', $this->userId)->findOrFail($id);
-            return new CartResource($Cart);
+            $Cart = $this->cartService->show($id, $this->userId);
+            return $this->success(new CartResource($Cart));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -71,11 +72,10 @@ class CartController extends Controller
     {
         try {
             $validatedData = $request->validated();
-            $Cart = Cart::where('user_id', $this->userId)->findOrFail($id);
-            $Cart->update($validatedData);
-            return response()->json(['data' => new CartResource($Cart)], 200);
+            $cart =  $this->cartService->update($validatedData, $id, $this->userId);
+            return $this->success(new CartResource($cart), 200);
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -83,21 +83,20 @@ class CartController extends Controller
     public function destroy(string $id)
     {
         try {
-            $Cart = Cart::where('user_id', $this->userId)->findOrFail($id);
-            $Cart->delete();
-            return response()->json(['data' => 'Cart deleted successfully'], 200);
+            $this->cartService->destroy($id, $this->userId);
+            return $this->success('Cart deleted successfully', 204);
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function clearCart()
     {
         try {
-            Cart::where('user_id', $this->userId)->delete();
-            return response()->json(['message' => 'Cart cleared successfully'], 200);
+            $this->cartService->clearCart($this->userId);
+            return $this->success(null, 'Cart cleared successfully', 200);
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

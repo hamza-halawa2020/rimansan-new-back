@@ -136,4 +136,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class);
     }
+    public function points()
+    {
+        return $this->hasMany(UserPoint::class);
+    }
 }

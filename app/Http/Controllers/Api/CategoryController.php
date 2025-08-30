@@ -4,122 +4,91 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
-use App\Models\Category;
 use Exception;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
-
+use App\Services\CategoryService;
+use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Gate;
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    function __construct()
+    use ApiResponse;
+
+    private CategoryService $categoryService;
+
+    function __construct(CategoryService $categoryService)
     {
         $this->middleware("auth:sanctum")->except(['index', 'show']);
         $this->middleware("limitReq");
+        $this->categoryService = $categoryService;
     }
 
     public function index()
     {
         try {
-            $categories = Category::all();
-            return CategoryResource::collection($categories);
+            $categories =  $this->categoryService->index();
+            return $this->success(CategoryResource::collection($categories));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(StoreCategoryRequest $request)
     {
         try {
             $validatedData = $request->validated();
             if (Gate::allows("is-admin")) {
 
-                if ($request->hasFile('image')) {
-                    $image = $request->file('image');
-                    $extension = $image->getClientOriginalExtension();
-                    $filename = time() . '_' . uniqid() . '.' . $extension;
-                    $folderPath = 'images/categories/';
-                    $image->move(public_path($folderPath), $filename);
-                }
-
-                $validatedData['image'] = $filename ?? 'default.png';
-                $category = Category::create($validatedData);
-                return response()->json(['data' => new CategoryResource($category)], 200);
+                $category = $this->categoryService->store($validatedData);
+                return $this->success(new CategoryResource($category), 200);
             } else {
-                return response()->json(['message' => 'not allow to Store category.'], 403);
+                return $this->error('not allow to store category.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
-
-    /**
-     * Display the specified resource.
-     */
 
     public function show(string $id)
     {
         try {
-            $category = Category::findOrFail($id);
-            return new CategoryResource($category);
+            $category = $this->categoryService->show($id);
+            return $this->success(new CategoryResource($category));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(UpdateCategoryRequest $request, string $id)
     {
         try {
             $validatedData = $request->validated();
             if (Gate::allows("is-admin")) {
-                $category = Category::findOrFail($id);
 
-                if ($request->hasFile('image')) {
-                    $image = $request->file('image');
-                    $extension = $image->getClientOriginalExtension();
-                    $filename = time() . '_' . uniqid() . '.' . $extension;
-                    $folderPath = 'images/categories/';
-
-                    if ($category->image && $category->image !== 'images/categories/default.png' && file_exists(public_path($category->image))) {
-                        unlink(public_path($category->image));
-                    }
-
-                    $image->move(public_path($folderPath), $filename);
-                    $validatedData['image'] = $filename;
-                }
-                $category->update($validatedData);
-                return response()->json(['data' => new CategoryResource($category)], 200);
+                $category = $this->categoryService->update($validatedData, $id);
+                return $this->success(new CategoryResource($category), 200);
             } else {
-                return response()->json(['message' => 'not allow to update category.'], 403);
+                return $this->error('not allow to update category.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
-    /**
-     * Remove the specified resource from storage.
-     */
+
+
     public function destroy(string $id)
     {
         try {
             if (Gate::allows("is-admin")) {
-                $user = Category::findOrFail($id);
-                $user->delete();
-                return response()->json(['data' => 'Category deleted successfully'], 200);
+
+                $user = $this->categoryService->destroy($id);
+                return $this->success('Category deleted $this->fully', 200);
             } else {
-                return response()->json(['message' => 'not allow to delete Category.'], 403);
+                return $this->error('not allow to delete Category.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

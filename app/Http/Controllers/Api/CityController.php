@@ -7,14 +7,18 @@ use App\Http\Requests\StoreCityRequest;
 use App\Http\Requests\UpdateCityRequest;
 use App\Http\Resources\CityResource;
 use App\Models\City;
+use App\Services\CityService;
+use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Support\Facades\Gate;
 
 class CityController extends Controller
 {
+    use ApiResponse;
     private $userId;
+    private CityService $cityService;
 
-    function __construct()
+    function __construct(CityService $cityService)
     {
         $this->middleware("auth:sanctum")->except(['index', 'show']);
         $this->middleware("limitReq");
@@ -22,15 +26,17 @@ class CityController extends Controller
             $this->userId = auth()->id();
             return $next($request);
         });
+
+        $this->cityService = $cityService;
     }
 
     public function index()
     {
         try {
-            $cities = City::all();
-            return CityResource::collection($cities);
+            $cities = $this->cityService->index();
+            return $this->success(CityResource::collection($cities));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -39,30 +45,27 @@ class CityController extends Controller
         try {
             $validatedData = $request->validated();
             if (Gate::allows("is-admin")) {
-
-
                 $exists = City::where('country_id', $validatedData['country_id'])->where('name', $validatedData['name'])->exists();
                 if ($exists) {
-                    return response()->json(['message' => 'This City is already exists.'], 409);
+                    return $this->error('This City is already exists.', 409);
                 }
-
-                $City = City::create($validatedData);
-                return response()->json(['data' => new CityResource($City)], 200);
+                $city = $this->cityService->store($validatedData);
+                return $this->success(new CityResource($city), 201);
             } else {
-                return response()->json(['message' => 'not allow to Store City.'], 403);
+                return $this->error('not allow to Store City.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function show(string $id)
     {
         try {
-            $City = City::findOrFail($id);
-            return new CityResource($City);
+            $city = $this->cityService->show($id);
+            return $this->success(new CityResource($city));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -72,22 +75,18 @@ class CityController extends Controller
         try {
             $validatedData = $request->validated();
             if (Gate::allows("is-admin")) {
-                $exists = City::where('country_id', $validatedData['country_id'])
-                    ->where('name', $validatedData['name'])
-                    ->where('id', '!=', $id)
-                    ->exists();
-
+                $exists = City::where('country_id', $validatedData['country_id'])->where('name', $validatedData['name'])->where('id', '!=', $id)->exists();
                 if ($exists) {
-                    return response()->json(['message' => 'This City already exists in the specified country.'], 409);
+                    return $this->error('This City already exists in the specified country.', 409);
                 }
-                $City = City::findOrFail($id);
-                $City->update($validatedData);
-                return response()->json(['data' => new CityResource($City)], 200);
+
+                $city = $this->cityService->update($validatedData, $id);
+                return $this->success(new CityResource($city));
             } else {
-                return response()->json(['message' => 'not allow to update City.'], 403);
+                return $this->error('not allow to update City.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -95,25 +94,23 @@ class CityController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $user = City::findOrFail($id);
-                $user->delete();
-                return response()->json(['data' => 'City deleted successfully'], 200);
+                $city = $this->cityService->destroy($id);
+                return $this->success('City deleted successfully', 204);
             } else {
-                return response()->json(['message' => 'not allow to delete City.'], 403);
+                return $this->error('not allow to delete City.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
-
 
     public function getCitiesByCountry($countryId)
     {
         try {
-            $cities = City::where('country_id', $countryId)->get();
-            return CityResource::collection($cities);
+            $cities = $this->cityService->getCitiesByCountry($countryId);
+            return $this->success(CityResource::collection($cities));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

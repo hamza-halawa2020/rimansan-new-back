@@ -10,6 +10,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class VerificationCodeController extends Controller
 {
@@ -43,6 +45,23 @@ class VerificationCodeController extends Controller
                 'verification_code' => $verificationCode,
                 'expires_at' => $expiresAt,
             ]);
+
+             // Send via WhatsApp if phone is provided
+             if ($request->phone || $user->phone) {
+                $phone = str_replace(['+', ' '], '', ($request->phone ?? $user->phone));
+                $response = Http::withHeaders([
+                    'X-API-Token' => config('services.whatsapp.token'),
+                    'Accept' => 'application/json',
+                ])->post(config('services.whatsapp.url'), [
+                    'phone' => $phone,
+                    'message' => "Your verification code is: $verificationCode. It is valid for 5 minutes.",
+                ]);
+
+                if ($response->failed()) {
+                    Log::error('WhatsApp API error: ' . json_encode($response->json()));
+                    // Continue to email as fallback
+                }
+            }
 
             Mail::send('emails.verification_code', [
                 'user' => $user,

@@ -12,17 +12,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Gate;
 
-
 class PaymobIntegrationController extends Controller
-
 {
-    function __construct()
+    public function __construct()
     {
         $this->middleware("auth:sanctum")->only(['index']);
         $this->middleware("limitReq");
     }
-    private $baseUrl = 'https://accept.paymob.com/api';
 
+    private $baseUrl = 'https://accept.paymob.com/api';
 
     public function index()
     {
@@ -34,58 +32,19 @@ class PaymobIntegrationController extends Controller
                 return response()->json(['message' => 'not allow to show payments.'], 403);
             }
         } catch (Exception $e) {
-            return response()->json($e, 500);
+            Log::error('Error in index', ['message' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
+    // Remove or disable state method unless needed
+    /*
     public function state()
     {
-        try {
-            $data = request()->query();
-            $hmac = $data['hmac'] ?? null;
-            $fields = [
-                'amount_cents' => $data['amount_cents'] ?? null,
-                'created_at' => $data['created_at'] ?? null,
-                'currency' => $data['currency'] ?? null,
-                'error_occured' => $data['error_occured'] ?? null,
-                'has_parent_transaction' => $data['has_parent_transaction'] ?? null,
-                'id' => $data['id'] ?? null,
-                'integration_id' => $data['integration_id'] ?? null,
-                'is_3d_secure' => $data['is_3d_secure'] ?? null,
-                'is_auth' => $data['is_auth'] ?? null,
-                'is_capture' => $data['is_capture'] ?? null,
-                'is_refunded' => $data['is_refunded'] ?? null,
-                'is_standalone_payment' => $data['is_standalone_payment'] ?? null,
-                'is_voided' => $data['is_voided'] ?? null,
-                'order' => $data['order'] ?? null,
-                'owner' => $data['owner'] ?? null,
-                'pending' => $data['pending'] ?? null,
-                'source_data_pan' => $data['source_data_pan'] ?? null,
-                'source_data_sub_type' => $data['source_data_sub_type'] ?? null,
-                'source_data_type' => $data['source_data_type'] ?? null,
-                'success' => $data['success'] ?? null,
-            ];
-            foreach ($fields as $field => $value) {
-                if (is_null($value)) {
-                    Log::warning("Field '{$field}' is null or missing");
-                }
-            }
-            $request_string = implode('', $fields);
-            $secret_key = env('PAYMOB_HMAC_SECRET');
-            $hashed = hash_hmac('SHA512', $request_string, $secret_key);
-            if ($hmac !== $hashed) {
-                return response()->json(['error' => 'Invalid HMAC'], 403);
-            }
-            return response()->json([
-                'message' => 'Payment processed successfully',
-                'success' => $fields['success'],
-                'pending' => $fields['pending'],
-            ], 200);
-        } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
-        }
+        Log::warning('State endpoint called, redirecting to callback', ['query' => request()->all()]);
+        return $this->callback(request());
     }
-
+    */
 
     public function getToken()
     {
@@ -94,201 +53,105 @@ class PaymobIntegrationController extends Controller
             $response = Http::post("{$this->baseUrl}/auth/tokens", [
                 'api_key' => env('PAYMOB_API_KEY')
             ]);
-            if ($response->failed()) {
-                Log::error('Failed to retrieve Paymob token.', ['response' => $response->body()]);
-                return null;
-            }
-            $returnResponse = $response->object()->token;
-            Log::info('Successfully retrieved Paymob token.', ['token' => $returnResponse]);
-            return $returnResponse;
-        } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
-        }
-    }
-    public function createOrder($token, $items, $merchantOrderId)
-    {
-
-        try {
-            Log::info('Attempting to create Paymob order.', [
-                'merchantOrderId' => $merchantOrderId,
-                'items' => $items
-            ]);
-
-            $data = [
-                "auth_token" => $token,
-                "delivery_needed" => "false",
-                "amount_cents" => array_sum(array_column($items, 'amount_cents')),
-                "currency" => "EGP",
-                "items" => $items,
-                "merchant_order_id" => $merchantOrderId,
-            ];
-
-            $response = Http::post("{$this->baseUrl}/ecommerce/orders", $data);
 
             if ($response->failed()) {
-                Log::error('Failed to create Paymob order.', ['response' => $response->body()]);
+                Log::error('Failed to retrieve Paymob token', ['response' => $response->body()]);
                 return null;
             }
 
-            $paymobOrder = $response->object();
-            if (!isset($paymobOrder->id)) {
-                Log::error('Paymob order ID is missing in the response.', ['response' => $response->body()]);
-                return null;
-            }
-
-            Log::info('Successfully created Paymob order.', ['paymobOrderId' => $paymobOrder->id]);
-            return $paymobOrder;
+            $token = $response->object()->token;
+            Log::info('Successfully retrieved Paymob token', ['token' => $token]);
+            return $token;
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
-        }
-    }
-    // public function getPaymentToken($order, $token, $billingData)
-    // {
-    //     try {
-    //         $data = [
-    //             "auth_token" => $token,
-    //             "amount_cents" => $order->amount_cents,
-    //             "expiration" => 3600,
-    //             "order_id" => $order->id,
-    //             "billing_data" => $billingData,
-    //             "currency" => "EGP",
-    //             "integration_id" => env('PAYMOB_INTEGRATION_ID')
-    //         ];
-    //         $response = Http::post("{$this->baseUrl}/acceptance/payment_keys", $data);
-    //         return $response->object()->token;
-    //     } catch (Exception $e) {
-    //         return response()->json($e->getMessage(), 500);
-    //     }
-    // }
-
-
-    public function getPaymentToken($order, $token, $billingData)
-    {
-        try {
-            $data = [
-                "auth_token" => $token,
-                "amount_cents" => $order->amount_cents,
-                "expiration" => 3600,
-                "order_id" => $order->id,
-                "billing_data" => $billingData,
-                "currency" => "EGP",
-                "integration_id" => env('PAYMOB_INTEGRATION_ID')
-            ];
-
-            $response = Http::post("{$this->baseUrl}/acceptance/payment_keys", $data);
-
-            // تسجيل الاستجابة الكاملة للتحقق
-            Log::info('Paymob Payment Token Response', ['response' => $response->body()]);
-
-            if ($response->failed()) {
-                Log::error('Failed to retrieve payment token', [
-                    'status' => $response->status(),
-                    'body' => $response->body()
-                ]);
-                return null; // أو يمكنك إرجاع رسالة خطأ مخصصة
-            }
-
-            $responseObject = $response->object();
-            if (!isset($responseObject->token)) {
-                Log::error('Payment token not found in response', ['response' => $response->body()]);
-                return null;
-            }
-
-            return $responseObject->token;
-        } catch (Exception $e) {
-            Log::error('Exception in getPaymentToken', ['message' => $e->getMessage()]);
+            Log::error('Error in getToken', ['message' => $e->getMessage()]);
             return null;
         }
     }
 
+    public function createPaymentIntention($token, $items, $merchantOrderId, $billingData)
+    {
+        try {
+            // Use the endpoint from Postman collection
+            $url = "https://accept.paymob.com/v1/intention/";
+            Log::info('Attempting to create Paymob payment intention', [
+                'url' => $url,
+                'merchantOrderId' => $merchantOrderId,
+                'items' => $items,
+                'billingData' => $billingData
+            ]);
 
-    // public function credit(Request $request)
-    // {
-    //     try {
-    //         $validatedData = $request->validate([
-    //             'orderID' => 'required|exists:orders,id',
-    //         ]);
-    //         $orderID = Order::find($validatedData['orderID']);
-    //         Log::error('orderID.', ['response' => $orderID]);
+            $data = [
+                'amount' => array_sum(array_column($items, 'amount_cents')),
+                'currency' => 'EGP',
+                'payment_methods' => [(int) env('PAYMOB_INTEGRATION_ID')],
+                'items' => array_map(function ($item) {
+                    return [
+                        'name' => $item['name'],
+                        'amount' => $item['amount_cents'],
+                        'description' => $item['name'],
+                        'quantity' => 1
+                    ];
+                }, $items),
+                'billing_data' => [
+                    'apartment' => $billingData['apartment'] ?? 'NA',
+                    'first_name' => $billingData['first_name'],
+                    'last_name' => $billingData['last_name'],
+                    'street' => $billingData['street'] ?? 'NA',
+                    'building' => $billingData['building'] ?? 'NA',
+                    'phone_number' => $billingData['phone_number'],
+                    'city' => $billingData['city'] ?? 'NA',
+                    'country' => $billingData['country'] ?? 'NA',
+                    'email' => $billingData['email'],
+                    'floor' => $billingData['floor'] ?? 'NA',
+                    'state' => $billingData['city'] ?? 'NA',
+                    'postal_code' => 'NA' // Optional
+                ],
+                'extras' => [
+                    'merchant_order_id' => (string) $merchantOrderId
+                ],
+                'special_reference' => (string) $merchantOrderId,
+                'expiration' => 3600,
+                'notification_url' => env('NOTIFICATION_URL'),
+                'redirection_url' => env('REDIRECTION_URL')
+            ];
 
-    //         if (!$orderID) {
-    //             return response()->json(['error' => 'Order not found'], 404);
-    //         }
+            $response = Http::withHeaders([
+                'Authorization' => 'Token ' . env('SECRET_KEY'),
+                'Content-Type' => 'application/json'
+            ])->post($url, $data);
 
-    //         $billingData = [
-    //             "apartment" => 0,
-    //             "email" => $orderID->user->email ?? $orderID->client->email,
-    //             "floor" => 0,
-    //             "first_name" => $orderID->user->name ?? $orderID->client->name,
-    //             "street" => $orderID->address->address,
-    //             "building" => 0,
-    //             "phone_number" => $orderID->user->phone ?? $orderID->client->phone,
-    //             "city" => $orderID->address->city->name,
-    //             "country" => $orderID->address->country->name,
-    //             "last_name" => $orderID->user->name ?? $orderID->client->name,
-    //         ];
-    //         Log::error('billingData.', ['response' => $billingData]);
+            Log::info('Paymob payment intention response', [
+                'response' => $response->json(),
+                'status' => $response->status()
+            ]);
 
+            if ($response->failed()) {
+                Log::error('Failed to create Paymob payment intention', [
+                    'response' => $response->body(),
+                    'status' => $response->status()
+                ]);
+                return null;
+            }
 
-    //         $localOrders = Payment::where('order_id', $orderID->id)->get();
-    //         Log::error('localOrders.', ['response' => $localOrders]);
+            $paymentIntention = $response->json();
+            if (!isset($paymentIntention['id']) || !isset($paymentIntention['client_secret'])) {
+                Log::error('Payment intention ID or client_secret missing', ['response' => $response->body()]);
+                return null;
+            }
 
-    //         foreach ($localOrders as $localOrder) {
-    //             if ($localOrder->status === 'completed') {
-    //                 Log::error('Completed order found.', ['response' => $localOrder]);
-    //                 return response()->json([
-    //                     'id' => $localOrder->id,
-    //                     'order' => $localOrder->order,
-    //                     'payment_method' => $localOrder->payment_method,
-    //                     'amount' => $localOrder->amount,
-    //                     'status' => $localOrder->status,
-    //                     'notes' => $localOrder->notes,
-    //                     'paymob_order_id' => $localOrder->paymob_order_id,
-    //                     'transaction_id' => $localOrder->transaction_id,
-    //                 ]);
-    //             }
-    //         }
-
-    //         foreach ($localOrders as $localOrder) {
-    //             if ($localOrder->status == 'pending') {
-    //                 $localOrder->update([
-    //                     'status' => 'failed'
-    //                 ]);
-    //             }
-    //         }
-
-    //         $newPayment = Payment::create([
-    //             'status' => 'pending',
-    //             'order_id' => $orderID->id,
-    //             'payment_method' => $orderID->payment_method,
-    //             'amount' => $orderID->total_price,
-    //             'notes' => 'Payment initiated for order #' . $orderID->order_number,
-    //         ]);
-
-    //         $items = [
-    //             [
-    //                 "name" => $orderID->order_number,
-    //                 "amount_cents" => $orderID->total_price * 100,
-    //             ]
-    //         ];
-    //         Log::error('items', ['response' => $items]);
-    //         $token = $this->getToken();
-    //         Log::error('token', ['response' => $token]);
-    //         $merchantOrderId = $newPayment->id;
-    //         Log::error('merchantOrderId', ['response' => $merchantOrderId]);
-    //         $order = $this->createOrder($token, $items, $merchantOrderId);
-    //         Log::error('order', ['response' => $order]);
-    //         $paymentToken = $this->getPaymentToken($order, $token, $billingData);
-    //         if (!$paymentToken) {
-    //             return response()->json(['error' => 'Payment token generation failed'], 500);
-    //         }
-    //         return response()->json([
-    //             'iframe_url' => "{$this->baseUrl}/acceptance/iframes/" . env('PAYMOB_IFRAME_ID') . '?payment_token=' . $paymentToken,
-    //         ]);
-    //     } catch (Exception $e) {
-    //         return response()->json($e->getMessage(), 500);
-    //     }
-    // }
+            Log::info('Successfully created Paymob payment intention', [
+                'intentionId' => $paymentIntention['id'],
+                'clientSecret' => $paymentIntention['client_secret']
+            ]);
+            return $paymentIntention;
+        } catch (Exception $e) {
+            Log::error('Exception in createPaymentIntention', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
+        }
+    }
 
     public function credit(Request $request)
     {
@@ -296,32 +159,35 @@ class PaymobIntegrationController extends Controller
             $validatedData = $request->validate([
                 'orderID' => 'required|exists:orders,id',
             ]);
-            $orderID = Order::find($validatedData['orderID']);
-            Log::info('orderID', ['response' => $orderID]);
 
-            if (!$orderID) {
+            $order = Order::find($validatedData['orderID']);
+            Log::info('Processing credit request', ['orderID' => $order->id, 'order' => $order]);
+
+            if (!$order) {
+                Log::error('Order not found', ['orderID' => $validatedData['orderID']]);
                 return response()->json(['error' => 'Order not found'], 404);
             }
 
             $billingData = [
-                "apartment" => 0,
-                "email" => $orderID->user->email ?? $orderID->client->email,
-                "floor" => 0,
-                "first_name" => $orderID->user->name ?? $orderID->client->name,
-                "street" => $orderID->address->address,
-                "building" => 0,
-                "phone_number" => $orderID->user->phone ?? $orderID->client->phone,
-                "city" => $orderID->address->city->name,
-                "country" => $orderID->address->country->name,
-                "last_name" => $orderID->user->name ?? $orderID->client->name,
+                'apartment' => 'NA',
+                'email' => $order->user->email ?? $order->client->email,
+                'floor' => 'NA',
+                'first_name' => $order->user->name ?? $order->client->name,
+                'street' => $order->address->address ?? 'NA',
+                'building' => 'NA',
+                'phone_number' => $order->user->phone ?? $order->client->phone,
+                'city' => $order->address->city->name ?? 'NA',
+                'country' => $order->address->country->name ?? 'NA',
+                'last_name' => $order->user->name ?? $order->client->name,
             ];
-            Log::info('billingData', ['response' => $billingData]);
+            Log::info('Billing data prepared', ['billingData' => $billingData]);
 
-            $localOrders = Payment::where('order_id', $orderID->id)->get();
-            Log::info('localOrders', ['response' => $localOrders]);
+            $localOrders = Payment::where('order_id', $order->id)->get();
+            Log::info('Local orders fetched', ['localOrders' => $localOrders]);
 
             foreach ($localOrders as $localOrder) {
                 if ($localOrder->status === 'completed') {
+                    Log::info('Completed payment found', ['payment' => $localOrder]);
                     return response()->json([
                         'id' => $localOrder->id,
                         'order' => $localOrder->order,
@@ -336,57 +202,76 @@ class PaymobIntegrationController extends Controller
             }
 
             foreach ($localOrders as $localOrder) {
-                if ($localOrder->status == 'pending') {
+                if ($localOrder->status === 'pending') {
                     $localOrder->update(['status' => 'failed']);
+                    Log::info('Pending payment marked as failed', ['paymentId' => $localOrder->id]);
                 }
             }
 
             $newPayment = Payment::create([
                 'status' => 'pending',
-                'order_id' => $orderID->id,
-                'payment_method' => $orderID->payment_method,
-                'amount' => $orderID->total_price,
-                'notes' => 'Payment initiated for order #' . $orderID->order_number,
+                'order_id' => $order->id,
+                'payment_method' => $order->payment_method,
+                'amount' => $order->total_price,
+                'notes' => 'Payment initiated for order #' . $order->order_number,
             ]);
+            Log::info('New payment created', ['payment' => $newPayment]);
 
             $items = [
                 [
-                    "name" => $orderID->order_number,
-                    "amount_cents" => $orderID->total_price * 100,
+                    'name' => $order->order_number,
+                    'amount_cents' => $order->total_price * 100,
                 ]
             ];
-            Log::info('items', ['response' => $items]);
+            Log::info('Items prepared for payment', ['items' => $items]);
 
             $token = $this->getToken();
-            Log::info('token', ['response' => $token]);
+            Log::info('Authentication token retrieved', ['token' => $token]);
             if (!$token) {
+                Log::error('Failed to retrieve authentication token');
                 return response()->json(['error' => 'Failed to retrieve authentication token'], 500);
             }
 
             $merchantOrderId = $newPayment->id;
-            Log::info('merchantOrderId', ['response' => $merchantOrderId]);
+            Log::info('Merchant order ID set', ['merchantOrderId' => $merchantOrderId]);
 
-            $order = $this->createOrder($token, $items, $merchantOrderId);
-            Log::info('order', ['response' => $order]);
-            if (!$order) {
-                return response()->json(['error' => 'Failed to create Paymob order'], 500);
+            $paymentIntention = $this->createPaymentIntention($token, $items, $merchantOrderId, $billingData);
+            Log::info('Payment intention response', ['paymentIntention' => $paymentIntention]);
+            if (!$paymentIntention) {
+                Log::error('Failed to create payment intention');
+                return response()->json(['error' => 'Failed to create payment intention'], 500);
             }
 
-            $paymentToken = $this->getPaymentToken($order, $token, $billingData);
-            Log::info('paymentToken', ['response' => $paymentToken]);
-            if (!$paymentToken) {
-                return response()->json(['error' => 'Payment token generation failed'], 500);
+            $newPayment->update([
+                'paymob_order_id' => $paymentIntention['intention_order_id'] ?? null,
+                'transaction_id' => $paymentIntention['id'],
+            ]);
+            Log::info('Payment updated with intention details', ['payment' => $newPayment]);
+
+            // Use client_secret and public_key for unified checkout (per Postman)
+            $clientSecret = $paymentIntention['client_secret'] ?? null;
+            if (!$clientSecret) {
+                Log::error('Client secret not found', ['paymentIntention' => $paymentIntention]);
+                return response()->json(['error' => 'Client secret not found'], 500);
             }
+
+            $publicKey = env('PAYMOB_PUBLIC_KEY'); // Add PAYMOB_PUBLIC_KEY to .env
+            if (!$publicKey) {
+                Log::error('Public key not configured');
+                return response()->json(['error' => 'Public key not configured'], 500);
+            }
+
+            $iframeUrl = "https://accept.paymob.com/unifiedcheckout/?publicKey={$publicKey}&clientSecret={$clientSecret}";
+            Log::info('Iframe URL generated', ['iframeUrl' => $iframeUrl]);
 
             return response()->json([
-                'iframe_url' => "{$this->baseUrl}/acceptance/iframes/" . env('PAYMOB_IFRAME_ID') . '?payment_token=' . $paymentToken,
+                'iframe_url' => $iframeUrl,
             ]);
         } catch (Exception $e) {
-            Log::error('Exception in credit', ['message' => $e->getMessage()]);
+            Log::error('Exception in credit', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
 
     public function callback(Request $request)
     {
@@ -429,17 +314,17 @@ class PaymobIntegrationController extends Controller
 
             $secure_hash = $request->get('hmac');
             $secret = env('PAYMOB_HMAC_SECRET');
-            $hased = hash_hmac('SHA512', $connectedString, $secret);
-            Log::info('Hash comparison', ['generated_hash' => $hased, 'received_hash' => $secure_hash]);
+            $hashed = hash_hmac('SHA512', $connectedString, $secret);
+            Log::info('Hash comparison', ['generated_hash' => $hashed, 'received_hash' => $secure_hash]);
 
-            if ($hased !== $secure_hash) {
+            if ($hashed !== $secure_hash) {
                 Log::warning('HMAC mismatch', ['status' => 'not secure']);
                 return response()->json(['status' => 'not secure'], 200);
             }
 
-            $localOrderId = $data['obj']['order']['merchant_order_id'] ?? null;
+            $localOrderId = $data['obj']['order']['merchant_order_id'] ?? $data['obj']['order']['special_reference'] ?? null;
             if (!$localOrderId) {
-                Log::error('merchant_order_id missing', ['data' => $data]);
+                Log::error('merchant_order_id or special_reference missing', ['data' => $data]);
                 return response()->json(['status' => 'merchant_order_id missing'], 400);
             }
 
@@ -447,30 +332,34 @@ class PaymobIntegrationController extends Controller
 
             $payment = Payment::find($localOrderId);
             if (!$payment) {
-                Log::error('Order not found', ['localOrderId' => $localOrderId]);
+                Log::error('Payment not found', ['localOrderId' => $localOrderId]);
                 return response()->json(['status' => 'payment not found'], 404);
             }
 
-            Log::info('Order found', ['payment' => $payment]);
+            Log::info('Payment found', ['payment' => $payment]);
 
             $payment->update([
                 'status' => $data['obj']['success'] === true ? 'completed' : 'failed',
                 'transaction_id' => $data['obj']['id'],
                 'paymob_order_id' => $data['obj']['order']['id'],
             ]);
-            $payment->order->update([
-                'status' => $data['obj']['success'] === true ? 'Pending' : 'Awaiting Payment',
-            ]);
+
+            if ($data['obj']['success'] === true) {
+                $payment->order->update([
+                    'status' => 'Pending',
+                ]);
+            } else {
+                $payment->order->delete();
+            }
+
             Log::info('Payment updated', ['payment' => $payment]);
 
             return response()->json(['status' => 'callback handled'], 200);
         } catch (Exception $e) {
-            Log::error('Exception occurred', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return response()->json($e->getMessage(), 500);
+            Log::error('Error in callback', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
-
 
     private function generateConnectedString(array $data): string
     {
@@ -498,7 +387,8 @@ class PaymobIntegrationController extends Controller
                 $data['success'] ? 'true' : 'false',
             ]);
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            Log::error('Error in generateConnectedString', ['message' => $e->getMessage()]);
+            return '';
         }
     }
 }

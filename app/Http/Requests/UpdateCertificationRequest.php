@@ -25,6 +25,7 @@ class UpdateCertificationRequest extends FormRequest
     {
         return [
             'serial_number' => 'string',
+            'file' => 'nullable',
             'user_id' => 'exists:users,id',
         ];
     }

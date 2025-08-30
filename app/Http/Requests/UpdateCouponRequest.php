@@ -30,6 +30,7 @@ class UpdateCouponRequest extends FormRequest
             'start_date' => 'nullable|date|before_or_equal:end_date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_active' => 'nullable|boolean',
+            'discount' => 'nullable|numeric|min:1|max:100',
         ];
     }
 

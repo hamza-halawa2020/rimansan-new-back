@@ -26,6 +26,8 @@ class UpdateAddSideBarBannerRequest extends FormRequest
         return [
             'link' => 'nullable|string',
             'status' => 'nullable',
+            'image' => 'nullable|image'
+
         ];
     }
     protected function failedValidation(Validator $validator)

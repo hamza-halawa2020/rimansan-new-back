@@ -6,35 +6,41 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAddSideBarBannerRequest;
 use App\Http\Requests\UpdateAddSideBarBannerRequest;
 use App\Http\Resources\AddSideBarBannerResource;
-use App\Models\AddSideBarBanner;
+use App\Services\AddSideBarBannerService;
+use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Support\Facades\Gate;
 
 class AddSideBarBannerController extends Controller
 {
-    function __construct()
+    use ApiResponse;
+
+    private AddSideBarBannerService $addSideBarBannerService;
+
+    function __construct(AddSideBarBannerService $addSideBarBannerService)
     {
         $this->middleware("auth:sanctum")->except(['index', 'show']);
         $this->middleware("limitReq");
+        $this->addSideBarBannerService = $addSideBarBannerService;
     }
 
     public function index()
     {
         try {
-            $addSideBarBanner = AddSideBarBanner::where('status', 'active')->get();
-            return AddSideBarBannerResource::collection($addSideBarBanner);
+            $addSideBarBanner = $this->addSideBarBannerService->index();
+            return $this->success(AddSideBarBannerResource::collection($addSideBarBanner));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function all()
     {
         try {
-            $addSideBarBanner = AddSideBarBanner::paginate(10);
-            return AddSideBarBannerResource::collection($addSideBarBanner);
+            $addSideBarBanner = $this->addSideBarBannerService->all();
+            return $this->success(AddSideBarBannerResource::collection($addSideBarBanner));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -46,86 +52,56 @@ class AddSideBarBannerController extends Controller
             $adminId = auth()->id();
             $validatedData['admin_id'] = $adminId;
             if (Gate::allows("is-admin")) {
-
-                if ($request->hasFile('image')) {
-                    $image = $request->file('image');
-                    $extension = $image->getClientOriginalExtension();
-                    $filename = time() . '_' . uniqid() . '.' . $extension;
-                    $folderPath = 'images/side-bar/';
-                    $image->move(public_path($folderPath), $filename);
-
-                }
-
-                $validatedData['image'] = $filename ?? 'default.png';
-
-                $addSideBarBanner = AddSideBarBanner::create($validatedData);
-                return response()->json(['data' => new AddSideBarBannerResource($addSideBarBanner)], 200);
+                $addSideBarBanner = $this->addSideBarBannerService->store($validatedData);
+                return $this->success(new AddSideBarBannerResource($addSideBarBanner), 'Address created successfully', 201);
             } else {
-                return response()->json(['message' => 'not allow to StoreAddSideBarBanner.'], 403);
+                return $this->error('not allow to Store AddSideBarBanner.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function show(string $id)
     {
         try {
-            $addSideBarBanner = AddSideBarBanner::findOrFail($id);
-            return new AddSideBarBannerResource($addSideBarBanner);
+            $addSideBarBanner = $this->addSideBarBannerService->show($id);
+            return $this->success(new AddSideBarBannerResource($addSideBarBanner));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function update(UpdateAddSideBarBannerRequest $request, string $id)
     {
+
         try {
             $validatedData = $request->validated();
 
             if (!Gate::allows("is-admin")) {
-                return response()->json(['message' => 'Not allowed to updateAddSideBarBanner.'], 403);
+                return $this->error('not allow to update AddSideBarBanner.', 403);
             }
 
-            $addSideBarBanner = AddSideBarBanner::findOrFail($id);
-            if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                $extension = $image->getClientOriginalExtension();
-                $filename = time() . '_' . uniqid() . '.' . $extension;
-                $folderPath = 'images/side-bar/';
-
-                if ($addSideBarBanner->image && $addSideBarBanner->image !== 'images/side-bar/default.png' && file_exists(public_path($addSideBarBanner->image))) {
-                    unlink(public_path($addSideBarBanner->image));
-                }
-
-                $image->move(public_path($folderPath), $filename);
-                $validatedData['image'] = $filename;
-            }
-
-            $addSideBarBanner->update($validatedData);
-            return response()->json(['data' => new AddSideBarBannerResource($addSideBarBanner)], 200);
+            $addSideBarBanner = $this->addSideBarBannerService->update($validatedData, $id);
+            return $this->success(new AddSideBarBannerResource($addSideBarBanner), 'AddSideBarBanner updated successfully');
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
+
 
     public function destroy(string $id)
     {
         try {
             if (Gate::allows("is-admin")) {
-                $addSideBarBanner = AddSideBarBanner::findOrFail($id);
 
-                if ($addSideBarBanner->image && $addSideBarBanner->image !== 'images/side-bar/default.png' && file_exists(public_path($addSideBarBanner->image))) {
-                    unlink(public_path($addSideBarBanner->image));
-                }
-
-                $addSideBarBanner->delete();
-                return response()->json(['data' => 'addSideBarBanner deleted successfully'], 200);
+                $this->addSideBarBannerService->destroy($id);
+                return $this->success(null, 'addSideBarBanner deleted successfully', 204);
             } else {
-                return response()->json(['message' => 'not allow to deleteAddSideBarBanner.'], 403);
+                return $this->error('not allow to delete AddSideBarBanner.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

@@ -6,15 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCountryRequest;
 use App\Http\Requests\UpdateCountryRequest;
 use App\Http\Resources\CountryResource;
-use App\Models\Country;
+use App\Services\CountryService;
+use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Support\Facades\Gate;
 
 class CountryController extends Controller
 {
-    private $userId;
+    use ApiResponse;
 
-    function __construct()
+    private $userId;
+    private CountryService $countryService;
+
+    function __construct(CountryService $countryService)
     {
         $this->middleware("auth:sanctum")->except(['index', 'show']);
         $this->middleware("limitReq");
@@ -23,82 +27,70 @@ class CountryController extends Controller
             return $next($request);
         });
 
+        $this->countryService = $countryService;
     }
 
     public function index()
     {
         try {
-            $countries = Country::all();
-            return CountryResource::collection($countries);
+            $countries = $this->countryService->index();
+            return $this->success(CountryResource::collection($countries));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
-        }
-    }
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreCountryRequest $request)
-    {
-        try {
-            $validatedData = $request->validated();
-            if (Gate::allows("is-admin")) {
-                $Country = Country::create($validatedData);
-                return response()->json(['data' => new CountryResource($Country)], 200);
-            } else {
-                return response()->json(['message' => 'not allow to Store Country.'], 403);
-            }
-        } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
+    public function store(StoreCountryRequest $request)
+    {
+        try {
+            if (!Gate::allows("is-admin")) {
+                return $this->error('not allow to Store Country.', 403);
+            }
+
+            $validatedData = $request->validated();
+            $country = $this->countryService->store($validatedData);
+            return $this->success(new CountryResource($country), 201);
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
 
     public function show(string $id)
     {
         try {
-            $Country = Country::findOrFail($id);
-            return new CountryResource($Country);
+            $country = $this->countryService->show($id);
+            return $this->success(new CountryResource($country));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(UpdateCountryRequest $request, string $id)
     {
         try {
-            $validatedData = $request->validated();
-            if (Gate::allows("is-admin")) {
-                $Country = Country::findOrFail($id);
-                $Country->update($validatedData);
-                return response()->json(['data' => new CountryResource($Country)], 200);
-            } else {
-                return response()->json(['message' => 'not allow to update Country.'], 403);
+            if (!Gate::allows("is-admin")) {
+                return $this->error('not allow to update Country.', 403);
             }
+
+            $validatedData = $request->validated();
+            $country = $this->countryService->update($validatedData, $id);
+            return $this->success(new CountryResource($country));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function destroy(string $id)
     {
         try {
-            if (Gate::allows("is-admin")) {
-                $user = Country::findOrFail($id);
-                $user->delete();
-                return response()->json(['data' => 'Country deleted successfully'], 200);
-            } else {
-                return response()->json(['message' => 'not allow to delete Country.'], 403);
+            if (!Gate::allows("is-admin")) {
+                return $this->error('not allow to delete Country.', 403);
             }
+
+            $this->countryService->destroy($id);
+            return $this->success('Country deleted successfully', 200);
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

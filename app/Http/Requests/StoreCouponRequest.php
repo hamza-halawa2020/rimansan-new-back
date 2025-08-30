@@ -27,11 +27,12 @@ class StoreCouponRequest extends FormRequest
             'code' => 'required|string|unique:coupons,code',
             'name' => 'required|string',
             'description' => 'nullable|string',
-            'discount' => 'required|numeric|min:0',
             'max_uses' => 'required|numeric|min:1',
             'start_date' => 'required|date|before_or_equal:end_date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'is_active' => 'nullable|boolean',
+            'discount' => 'required|numeric|min:1|max:100',
+
         ];
     }
 

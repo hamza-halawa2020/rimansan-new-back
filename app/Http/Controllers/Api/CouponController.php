@@ -6,32 +6,35 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCouponRequest;
 use App\Http\Requests\UpdateCouponRequest;
 use App\Http\Resources\CouponResource;
-use App\Models\Coupon;
+use App\Services\CouponService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Exception;
 
 class CouponController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    function __construct()
+
+    use ApiResponse;
+    private CouponService $couponService;
+    function __construct(CouponService $couponService)
     {
         $this->middleware("auth:sanctum")->except('showCoupon');
         $this->middleware("limitReq");
+
+        $this->couponService = $couponService;
     }
     public function index()
     {
         try {
             if (Gate::allows("is-admin")) {
-                $coupons = Coupon::paginate(10);
-                return CouponResource::collection($coupons);
+                $coupons =  $this->couponService->index();
+                return $this->success(CouponResource::collection($coupons));
             } else {
-                return response()->json(['message' => 'not allow to show coupons.'], 403);
+                return $this->error('not allow to show coupons.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -43,13 +46,13 @@ class CouponController extends Controller
                 $validatedData = $request->validated();
                 $adminId = auth()->id();
                 $validatedData['admin_id'] = $adminId;
-                $coupon = Coupon::create($validatedData);
-                return response()->json(['data' => new CouponResource($coupon)], 200);
+                $coupon =  $this->couponService->store($validatedData);
+                return $this->success(new CouponResource($coupon), 200);
             } else {
-                return response()->json(['message' => 'not allow to show coupons.'], 403);
+                return $this->error('not allow to show coupons.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return  $this->error($e->getMessage(), 500);
         }
     }
 
@@ -61,33 +64,24 @@ class CouponController extends Controller
             $request->validate([
                 'code' => 'required|string',
             ]);
-
-            $coupon = Coupon::where('code', $request->code)
-                ->where('is_active', true)
-                ->where('start_date', '<=', now())
-                ->where('end_date', '>=', now())
-                ->whereColumn('uses_count', '<', 'max_uses')
-                ->first();
-
+            $coupon = $this->couponService->showByCode($request->code);
             if (!$coupon) {
-                return response()->json(['message' => 'Invalid or expired coupon.'], 400);
+                return $this->error('Invalid or expired coupon.', 400);
             }
-
-            return new CouponResource($coupon);
+            return $this->success(new CouponResource($coupon));
         } catch (Exception $e) {
-            return response()->json(['message' => 'An error occurred while fetching the coupon.'], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
-
 
 
     public function show(string $id)
     {
         try {
-            $coupon = Coupon::findOrFail($id);
-            return new CouponResource($coupon);
+            $coupon =  $this->couponService->show($id);
+            return $this->success(new CouponResource($coupon));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -95,37 +89,29 @@ class CouponController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $coupon = Coupon::find($id);
-                if (!$coupon) {
-                    return response()->json(['message' => 'Coupon not found.'], 404);
-                }
                 $validatedData = $request->validated();
-                $coupon->update($validatedData);
-                return response()->json(new CouponResource($coupon), 200);
+                $coupon =  $this->couponService->update($validatedData, $id);
+                return $this->success(new CouponResource($coupon));
+            } else {
+                return $this->error('not allow to show coupons.', 403);
             }
-            return response()->json(['message' => 'Not allowed to update coupons.'], 403);
         } catch (Exception $e) {
-            return response()->json(['message' => 'An error occurred while updating the coupon.'], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
+
 
 
     public function destroy(string $id)
     {
         try {
-            if (Gate::allows("is-admin")) {
-                $coupon = Coupon::findOrFail($id);
-                $coupon->update([
-                    'is_active' => false
-                ]);
-
-                $coupon->delete();
-                return response()->json(['data' => 'coupon deleted successfully'], 200);
-            } else {
-                return response()->json(['message' => 'not allow to delete coupon.'], 403);
+            if (!Gate::allows("is-admin")) {
+                return $this->error('not allow to delete coupon.', 403);
             }
+            $this->couponService->destroy($id);
+            return $this->success('Coupon deleted successfully', 200);
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

@@ -32,6 +32,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\PointController;
 use App\Http\Controllers\Api\TranslationController;
 
 /*
@@ -218,19 +219,27 @@ Route::get('orders-export', [OrderController::class, 'exportPendingOrders']);
 
 /**************************** end orders api ****************************/
 
-/**************************** start paymob integration api ****************************/
+/**************************** Start Paymob Integration API ****************************/
+
 Route::get('payments', [PaymobIntegrationController::class, 'index']);
 Route::get('state', [PaymobIntegrationController::class, 'state']);
 Route::prefix('payment')->group(function () {
     Route::post('/credit', [PaymobIntegrationController::class, 'credit']);
     Route::post('/callback', [PaymobIntegrationController::class, 'callback']);
 });
-/**************************** end paymob integration api ****************************/
+
+/**************************** End Paymob Integration API ****************************/
+
+/**************************** start points api ****************************/
+Route::apiResource('points', PointController::class);
+/**************************** end points api ****************************/
 
 
 
+/**************************** start translations api ****************************/
 Route::prefix('translations')->group(function () {
     Route::get('/index', [TranslationController::class, 'index']); // Fetch translations
     Route::post('/update', [TranslationController::class, 'update']); // Update translations
     Route::get('/download/{lang}', [TranslationController::class, 'download']); // Download JSON file
 });
+/**************************** end translations api ****************************/

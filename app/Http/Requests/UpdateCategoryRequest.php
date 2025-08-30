@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class UpdateCategoryRequest extends FormRequest
 {
@@ -24,10 +25,16 @@ class UpdateCategoryRequest extends FormRequest
     public function rules(): array
     {
         $rules = [];
-
+    
         if ($this->filled('name')) {
-            $rules['name'] = 'sometimes|string|unique:categories';
+            $rules['name'] = [
+                'sometimes',
+                'string',
+                Rule::unique('categories', 'name')->ignore($this->route('id')),
+
+            ];
         }
+    
         return $rules;
     }
     protected function failedValidation(Validator $validator)

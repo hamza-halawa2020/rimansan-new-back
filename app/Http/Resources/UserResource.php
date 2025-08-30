@@ -26,6 +26,9 @@ class UserResource extends JsonResource
             "type" => $this->type,
             "created_at" => $this->created_at,
             'addresses' => AddressResource::collection($this->addresses),
+            "points" => UserPointResource::collection($this->points),
+
+
         ];
     }
 }

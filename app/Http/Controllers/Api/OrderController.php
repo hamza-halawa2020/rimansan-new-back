@@ -19,7 +19,9 @@ use Exception;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PendingOrdersExport;
 use App\Mail\OrderCreatedMail;
+use App\Models\ProductPoint;
 use App\Models\User;
+use App\Models\UserPoint;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -29,7 +31,7 @@ class OrderController extends Controller
 
     function __construct()
     {
-        $this->middleware("auth:sanctum")->except(['storeByClient']);
+        $this->middleware("auth:sanctum")->except(['storeByClient','trackOrder']);
         $this->middleware("limitReq");
         $this->middleware(function ($request, $next) {
             $this->userId = auth()->id();
@@ -92,7 +94,6 @@ class OrderController extends Controller
             DB::beginTransaction();
             $validatedData['user_id'] = $this->userId;
             $validatedData = $this->prepareOrderData($request);
-            // $order = Order::create($validatedData);
             $address = Address::create([
                 'address' => $validatedData['address'],
                 'country_id' => $validatedData['country_id'],
@@ -115,9 +116,9 @@ class OrderController extends Controller
             $finalTotal = $this->calculateFinalTotal($order, $validatedData['coupon_discount'], $validatedData['shipment_cost']);
             $order->update(['total_price' => $finalTotal]);
             if ($order->payment_method != 'cash_on_delivery') {
-                // $this->processPayment($order, $request);
                 $order->update(['status' => 'Awaiting Payment']);
             }
+
             DB::commit();
 
             $adminEmails = User::where('type', 'admin')->pluck('email')->toArray();
@@ -155,18 +156,6 @@ class OrderController extends Controller
                 'country_id' => $validatedData['country_id'],
                 'city_id' => $validatedData['city_id'],
             ]);
-            // $order = Order::create([
-            //     'client_id' => $client->id,
-            //     'address_id' => $address->id,
-            //     'coupon_id' => $validatedData['coupon_id'],
-            //     'shipment_id' => $validatedData['shipment_id'],
-            //     'notes' => $validatedData['notes'],
-            //     'payment_method' => $validatedData['payment_method'],
-            //     'coupon_discount' => $validatedData['coupon_discount'],
-            //     'shipment_cost' => $validatedData['shipment_cost'],
-            //     'total_price' => $validatedData['total_price'],
-            //     'order_number' => $validatedData['order_number'],
-            // ]);
 
             $order = Order::create([
                 'client_id' => $client->id,
@@ -182,14 +171,11 @@ class OrderController extends Controller
             ]);
 
 
-
-
             $this->processOrderItems($order, $request->orderItems);
 
             $finalTotal = $this->calculateFinalTotal($order, $validatedData['coupon_discount'], $validatedData['shipment_cost']);
             $order->update(['total_price' => $finalTotal]);
             if ($order->payment_method != 'cash_on_delivery') {
-                // $this->processPayment($order, $request);
                 $order->update(['status' => 'Awaiting Payment']);
             }
             DB::commit();
@@ -265,7 +251,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'status' => 'required',
         ]);
-        $order = Order::find($id);
+        $order = Order::with('orderItems')->find($id);
 
         if (!$order) {
             Log::error('Order not found:', ['id' => $id]);
@@ -276,30 +262,30 @@ class OrderController extends Controller
         $order->admin_id = $this->userId;
         $order->save();
 
+        if ($order->status == 'Delivered' && $order->user_id  && !$order->client_id) {
+            $existingPoints = UserPoint::where('order_id', $order->id)->exists();
+            if ($existingPoints) {
+                return response()->json(['message' => 'Points already awarded for this order.']);
+            } else {
+                foreach ($order->orderItems as $item) {
+                    $productPoint = ProductPoint::where('product_id', $item->product->id)->whereNull('disabled_at')->latest()->first();
+                    if ($productPoint) {
+                        $totalPoints = $productPoint->points * $item->quantity;
+                        UserPoint::create([
+                            'user_id' => $this->userId,
+                            'product_point_id' => $productPoint->id,
+                            'order_id' => $order->id,
+                            'points' => $totalPoints,
+                        ]);
+                    }
+                }
+            }
+        }
+
         Log::info('Order status updated successfully:', ['order' => $order]);
 
         return response()->json(['message' => 'Order status updated successfully.', 'order' => $order]);
     }
-
-
-
-
-    public function destroy(string $id)
-    {
-        try {
-            if (Gate::allows("is-admin")) {
-                $Order = Order::findOrFail($id);
-                $Order->update(['notes' => "order delete by admin id : {$this->userId}"]);
-                $Order->delete();
-                return response()->json(['message' => 'Order deleted successfully'], 200);
-            } else {
-                return response()->json(['message' => 'not allow to show Order.'], 403);
-            }
-        } catch (Exception $e) {
-            return response()->json($e, 500);
-        }
-    }
-
 
 
 
@@ -309,10 +295,10 @@ class OrderController extends Controller
         $totalWithoutCoupon = $order->orderItems->sum('total');
 
         //percentage coupon like discount 50 % , 20%
-        // $discountAmount = ($couponDiscount / 100) * $totalWithoutCoupon;
+        $discountAmount = ($couponDiscount / 100) * $totalWithoutCoupon;
 
         //static coupon like discount 50L.E , 80L.E
-        $discountAmount = $order->coupon ? $order->coupon->discount : 0;
+        // $discountAmount = $order->coupon ? $order->coupon->discount : 0;
 
         return $totalWithoutCoupon - $discountAmount + $shipmentCost;
     }
@@ -350,24 +336,6 @@ class OrderController extends Controller
             throw new Exception("Failed to process payment: " . $e->getMessage());
         }
     }
-    // private function prepareOrderData($request)
-    // {
-    //     $validatedData = $request->validated();
-    //     if (isset($validatedData['coupon_id'])) {
-    //         $coupon = Coupon::findOrFail($validatedData['coupon_id']);
-    //         $validatedData['coupon_discount'] = $coupon->discount;
-    //     } else {
-    //         $validatedData['coupon_discount'] = 0;
-    //     }
-    //     $city = City::findOrFail($validatedData['city_id']);
-    //     $shipment = $city->shipments()->firstOrFail();
-    //     $validatedData['shipment_id'] = $shipment->id;
-    //     $validatedData['shipment_cost'] = $shipment->cost;
-    //     $validatedData['total_price'] = 0;
-    //     $validatedData['order_number'] = 'ORD-' . Str::uuid();
-
-    //     return $validatedData;
-    // }
 
     private function prepareOrderData($request)
     {
