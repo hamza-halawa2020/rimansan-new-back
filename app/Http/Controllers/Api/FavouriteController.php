@@ -6,15 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreFavouriteRequest;
 use App\Http\Resources\FavouriteResource;
 use App\Models\Favourite;
+use App\Traits\ApiResponse;
 use Exception;
+use App\Services\FavouriteService;
 
 class FavouriteController extends Controller
 {
+    use ApiResponse;
     private $userId;
-    function __construct()
+    private FavouriteService $favouriteService;
+
+    public function __construct(FavouriteService $favouriteService)
     {
         $this->middleware("auth:sanctum");
         $this->middleware("limitReq");
+        $this->favouriteService = $favouriteService;
         $this->middleware(function ($request, $next) {
             $this->userId = auth()->id();
             return $next($request);
@@ -24,60 +30,58 @@ class FavouriteController extends Controller
     public function index()
     {
         try {
-            $favourites = Favourite::where('user_id', $this->userId)->get();
-            return FavouriteResource::collection($favourites);
+            $favourites = $this->favouriteService->index($this->userId);
+            return $this->success(FavouriteResource::collection($favourites));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
+
 
     public function store(StoreFavouriteRequest $request)
     {
         try {
             $validatedData = $request->validated();
-            $validatedData['user_id'] = $this->userId;
 
-            $exists = Favourite::where('user_id', $this->userId)->where('product_id', $validatedData['product_id'])->exists();
-            if ($exists) {
-                return response()->json(['message' => 'This product is already in your favourites.'], 409);
+            $favourite = $this->favouriteService->store($validatedData, $this->userId);
+
+            if (!$favourite) {
+                return $this->error('This product is already in your favourites.', 409);
             }
 
-            $favourite = Favourite::create($validatedData);
-            return response()->json(['data' => new FavouriteResource($favourite),], 201);
+            return $this->success(new FavouriteResource($favourite), 201);
         } catch (Exception $e) {
-            return response()->json(['message' => 'Failed to add favourite. Please try again later.'], 500);
+            return $this->error('Failed to add favourite. Please try again later.', 500);
         }
     }
 
     public function show(string $id)
     {
         try {
-            $favourite = Favourite::where('user_id', $this->userId)->findOrFail($id);
-            return new FavouriteResource($favourite);
+            $favourite = $this->favouriteService->show($id, $this->userId);
+            return $this->success(new FavouriteResource($favourite));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
-
 
     public function destroy(string $id)
     {
         try {
-            $favourite = Favourite::where('user_id', $this->userId)->findOrFail($id);
-            $favourite->delete();
-            return response()->json(['data' => 'favourite deleted successfully'], 200);
+            $favourite = $this->favouriteService->destroy($id, $this->userId);
+            return $this->success('favourite deleted successfully');
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function clearFav()
     {
         try {
-            Favourite::where('user_id', $this->userId)->delete();
-            return response()->json(['message' => 'favourite cleared successfully'], 200);
+            $this->favouriteService->clearFav($this->userId);
+            return $this->success('favourite cleared successfully');
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

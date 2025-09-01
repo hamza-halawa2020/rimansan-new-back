@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+
 class UpdateEventRequest extends FormRequest
 {
     /**
@@ -27,6 +28,10 @@ class UpdateEventRequest extends FormRequest
             'tag_id' => 'exists:tags,id',
             'title' => 'string',
             'content' => 'string',
+            'image*' => 'nullable',
+
+            'image' => 'nullable',
+            'images.*' => 'nullable',
         ];
     }
     protected function failedValidation(Validator $validator)

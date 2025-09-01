@@ -7,32 +7,36 @@ use App\Http\Requests\StoreFaqRequest;
 use App\Http\Requests\UpdateFaqRequest;
 use App\Http\Resources\FaqResource;
 use App\Models\Faq;
+use App\Services\FaqService;
+use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Support\Facades\Gate;
 
 class FaqController extends Controller
 {
 
+    use ApiResponse;
     private $userId;
+    private FaqService $faqService;
 
-    function __construct()
+    function __construct(FaqService $faqService)
     {
         $this->middleware("auth:sanctum")->except(['index', 'show']);
         $this->middleware("limitReq");
+        $this->faqService = $faqService;
         $this->middleware(function ($request, $next) {
             $this->userId = auth()->id();
             return $next($request);
         });
-
     }
 
     public function index()
     {
         try {
-            $Faqs = Faq::all();
-            return FaqResource::collection($Faqs);
+            $Faqs = $this->faqService->index();
+            return $this->success(FaqResource::collection($Faqs));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -42,24 +46,23 @@ class FaqController extends Controller
             $validatedData = $request->validated();
             $validatedData['admin_id'] = $this->userId;
             if (Gate::allows("is-admin")) {
-                $Faq = Faq::create($validatedData);
-
-                return response()->json(['data' => new FaqResource($Faq)], 200);
+                $Faq = $this->faqService->store($validatedData);
+                return $this->success(new FaqResource($Faq));
             } else {
-                return response()->json(['message' => 'not allow to Store Faq.'], 403);
+                return $this->error('not allow to Store Faq.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function show(string $id)
     {
         try {
-            $Faq = Faq::findOrFail($id);
-            return new FaqResource($Faq);
+            $Faq = $this->faqService->show($id);
+            return $this->success(new FaqResource($Faq));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -69,9 +72,8 @@ class FaqController extends Controller
             $validatedData = $request->validated();
 
             if (Gate::allows("is-admin")) {
-                $Faq = Faq::findOrFail($id);
-                $Faq->update($validatedData);
-                return response()->json(['data' => new FaqResource($Faq)], 200);
+                $faq = $this->faqService->update($validatedData, $id);
+                return response()->json(['data' => new FaqResource($faq)], 200);
             }
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -82,14 +84,13 @@ class FaqController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $Faq = Faq::findOrFail($id);
-                $Faq->delete();
-                return response()->json(['data' => 'Faq deleted successfully'], 200);
+                $faq = $this->faqService->destroy($id);
+                return $this->success(['data' => 'Faq deleted successfully']);
             } else {
-                return response()->json(['message' => 'not allow to delete Faq.'], 403);
+                return $this->error('not allow to delete Faq.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

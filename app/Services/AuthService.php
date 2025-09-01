@@ -83,7 +83,7 @@ class AuthService
             $filename = null;
 
             if ($imageFile) {
-                $data['image'] = $this->fileService->upload($imageFile, 'images/users');
+                $imageFile['image'] = $this->fileService->upload($imageFile, 'images/users');
             }
 
             $user = User::create([

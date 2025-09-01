@@ -344,13 +344,13 @@ class PaymobIntegrationController extends Controller
                 'paymob_order_id' => $data['obj']['order']['id'],
             ]);
 
-            if ($data['obj']['success'] === true) {
-                $payment->order->update([
-                    'status' => 'Pending',
-                ]);
-            } else {
-                $payment->order->delete();
-            }
+            // if ($data['obj']['success'] === true) {
+            //     $payment->order->update([
+            //         'status' => 'Pending',
+            //     ]);
+            // } else {
+            //     $payment->order->delete();
+            // }
 
             Log::info('Payment updated', ['payment' => $payment]);
 

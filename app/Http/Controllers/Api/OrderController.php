@@ -126,7 +126,7 @@ class OrderController extends Controller
             $allEmails = array_merge($adminEmails, [$userEmail]);
             Log::info('All emails: ' . json_encode($allEmails));
             foreach ($allEmails as $email) {
-                Mail::to($email)->send(new OrderCreatedMail($order));
+                Mail::to($email)->queue(new OrderCreatedMail($order));
             }
             Log::info('Order created successfully: ' . json_encode($order));
 
@@ -187,7 +187,7 @@ class OrderController extends Controller
             $allEmails = array_merge($adminEmails, [$userEmail]);
             Log::info('All emails: ' . json_encode($allEmails));
             foreach ($allEmails as $email) {
-                Mail::to($email)->send(new OrderCreatedMail($order));
+                Mail::to($email)->queue(new OrderCreatedMail($order));
             }
             Log::info('Order created successfully: ' . json_encode($order));
 

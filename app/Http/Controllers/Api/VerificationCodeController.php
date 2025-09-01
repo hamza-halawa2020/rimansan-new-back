@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\VerificationCodeMail;
 use App\Models\VerificationCode;
 use Exception;
 use Illuminate\Http\Request;
@@ -46,30 +47,35 @@ class VerificationCodeController extends Controller
                 'expires_at' => $expiresAt,
             ]);
 
-             // Send via WhatsApp if phone is provided
-             if ($request->phone || $user->phone) {
-                $phone = str_replace(['+', ' '], '', ($request->phone ?? $user->phone));
-                $response = Http::withHeaders([
-                    'X-API-Token' => config('services.whatsapp.token'),
-                    'Accept' => 'application/json',
-                ])->post(config('services.whatsapp.url'), [
-                    'phone' => $phone,
-                    'message' => "Your verification code is: $verificationCode. It is valid for 5 minutes.",
-                ]);
+            // Send via WhatsApp if phone is provided
+            // if ($request->phone || $user->phone) {
+            //     $phone = str_replace(['+', ' '], '', ($request->phone ?? $user->phone));
+            //     $response = Http::withHeaders([
+            //         'X-API-Token' => config('services.whatsapp.token'),
+            //         'Accept' => 'application/json',
+            //     ])->post(config('services.whatsapp.url'), [
+            //         'phone' => $phone,
+            //         'message' => "Your verification code is: $verificationCode. It is valid for 5 minutes.",
+            //     ]);
 
-                if ($response->failed()) {
-                    Log::error('WhatsApp API error: ' . json_encode($response->json()));
-                    // Continue to email as fallback
-                }
-            }
+            //     if ($response->failed()) {
+            //         Log::error('WhatsApp API error: ' . json_encode($response->json()));
+            //         // Continue to email as fallback
+            //     }
+            // }
 
-            Mail::send('emails.verification_code', [
-                'user' => $user,
-                'verificationCode' => $verificationCode,
-            ], function ($message) use ($user) {
-                $message->to($user->email)
-                    ->subject('Verification Code');
-            });
+            // Mail::send('emails.verification_code', [
+            //     'user' => $user,
+            //     'verificationCode' => $verificationCode,
+            // ], function ($message) use ($user) {
+            //     $message->to($user->email)
+            //         ->subject('Verification Code');
+            // });
+
+            // Mail::to($user->email)->send(new VerificationCodeMail($user, $verificationCode));
+
+
+            Mail::to($user->email)->queue(new VerificationCodeMail($user, $verificationCode));
 
 
             return response()->json([
@@ -116,5 +122,4 @@ class VerificationCodeController extends Controller
             return response()->json($e->getMessage(), 500);
         }
     }
-
 }

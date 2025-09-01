@@ -28,6 +28,9 @@ class StoreEventRequest extends FormRequest
             'tag_id' => 'required|exists:tags,id',
             'title' => 'required|string',
             'content' => 'required|string',
+
+            'image' => 'nullable',
+            'images.*' => 'nullable',
         ];
     }
     protected function failedValidation(Validator $validator)
