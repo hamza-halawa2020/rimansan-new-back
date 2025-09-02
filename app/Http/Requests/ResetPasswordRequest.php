@@ -5,7 +5,8 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
-class UpdateMainSliderRequest extends FormRequest
+
+class ResetPasswordRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,14 +24,11 @@ class UpdateMainSliderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'nullable|string',
-            'description' => 'nullable|string',
-            'link' => 'nullable|string',
-            'status' => 'nullable',
-            'image'=>'nullable'
-
+            'token' => 'required|string',
+            'password' => 'required|string|confirmed|min:8',
         ];
     }
+
     protected function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(
@@ -41,4 +39,3 @@ class UpdateMainSliderRequest extends FormRequest
         );
     }
 }
-

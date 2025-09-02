@@ -27,6 +27,8 @@ class StoreMainSliderRequest extends FormRequest
             'title' => 'nullable|string',
             'description' => 'nullable|string',
             'link' => 'nullable|string',
+            'image' => 'nullable'
+
         ];
     }
     protected function failedValidation(Validator $validator)

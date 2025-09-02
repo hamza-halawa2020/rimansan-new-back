@@ -29,6 +29,8 @@ class StoreInstructorRequest extends FormRequest
             'phone' => 'required|min:8|numeric',
             'job_title' => 'required|string',
             'description' => 'required|string',
+            'image' => 'nullable'
+
         ];
     }
 

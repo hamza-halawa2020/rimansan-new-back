@@ -24,11 +24,12 @@ class UpdateInstructorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['nullable', 'email', Rule::unique('instructors')->ignore($this->route('instructor')),],
+            'email' => ['nullable', 'email', Rule::unique('instructors')->ignore($this->route('id')),],
             'name' => 'string',
             'phone' => 'min:8|numeric',
             'job_title' => 'string',
             'description' => 'string',
+            'image' => 'nullable'
         ];
     }
     protected function failedValidation(Validator $validator)
