@@ -42,7 +42,7 @@ class UserController extends Controller
                 return $this->error('not allow to show users.', 403);
             }
         } catch (Exception $e) {
-            return $this->error($e->getMessage(), 500);
+            return $this->error($e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -65,7 +65,7 @@ class UserController extends Controller
                 return $this->error('not allow to show users.', 403);
             }
         } catch (Exception $e) {
-            return $this->error($e->getMessage(), 500);
+            return $this->error($e->getMessage(), $e->getCode() ?: 500);
         }
     }
 

@@ -35,7 +35,7 @@ class VerificationCodeController extends Controller
             $result = $this->verificationCodeService->send($request->email);
             return $this->respondFromPayload($result);
         } catch (Exception $e) {
-            return $this->error($e->getMessage(), 500);
+            return $this->error($e->getMessage(), $e->getCode() ?: 500);
         }
     }
 
@@ -53,7 +53,7 @@ class VerificationCodeController extends Controller
             $result = $this->verificationCodeService->verify($request->verification_code);
             return $this->respondFromPayload($result);
         } catch (Exception $e) {
-            return $this->error($e->getMessage(), 500);
+            return $this->error($e->getMessage(), $e->getCode() ?: 500);
         }
     }
 

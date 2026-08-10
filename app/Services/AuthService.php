@@ -106,7 +106,7 @@ class AuthService
 
         } catch (Exception $e) {
             DB::rollBack();
-            return $this->error($e->getMessage(), 500);
+            return $this->error($e->getMessage(), $e->getCode() ?: 500);
         }
     }
 

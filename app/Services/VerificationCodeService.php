@@ -6,10 +6,13 @@ use App\Mail\VerificationCodeMail;
 use App\Models\User;
 use App\Models\VerificationCode;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Mail;
 
 class VerificationCodeService
 {
+    public function __construct(private MailService $mailService)
+    {
+    }
+
     public function send(string $email): array
     {
         $user = User::where('email', $email)->firstOrFail();
@@ -31,7 +34,12 @@ class VerificationCodeService
             'expires_at' => $expiresAt,
         ]);
 
-        Mail::to($user->email)->queue(new VerificationCodeMail($user, $verificationCode));
+        try {
+            $this->mailService->queue($user->email, new VerificationCodeMail($user, $verificationCode));
+        } catch (\Throwable $exception) {
+            VerificationCode::where('user_id', $user->id)->delete();
+            throw $exception;
+        }
 
         return [
             'status' => 200,

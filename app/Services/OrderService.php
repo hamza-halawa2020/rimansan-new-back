@@ -15,11 +15,15 @@ use App\Models\UserPoint;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Throwable;
 
 class OrderService
 {
+    public function __construct(private MailService $mailService)
+    {
+    }
+
     public function index()
     {
         return Order::orderBy('created_at', 'desc')->paginate(10);
@@ -261,7 +265,15 @@ class OrderService
         Log::info('All emails: ' . json_encode($allEmails));
 
         foreach ($allEmails as $email) {
-            Mail::to($email)->queue(new OrderCreatedMail($order));
+            try {
+                $this->mailService->queue($email, new OrderCreatedMail($order));
+            } catch (Throwable $exception) {
+                Log::warning('Order created mail was not sent.', [
+                    'order_id' => $order->id,
+                    'email' => $email,
+                    'message' => $exception->getMessage(),
+                ]);
+            }
         }
     }
 }

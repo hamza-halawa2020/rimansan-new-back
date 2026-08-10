@@ -7,11 +7,14 @@ use App\Models\ResetPassword;
 use App\Models\User;
 use Carbon\Carbon;
 use Exception;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class ForgetPasswordService
 {
+    public function __construct(private MailService $mailService)
+    {
+    }
+
     public function generateResetToken(string $emailOrPhone): void
     {
         if (filter_var($emailOrPhone, FILTER_VALIDATE_EMAIL)) {
@@ -35,7 +38,12 @@ class ForgetPasswordService
             'token' => hash('sha256', $token),
         ]);
 
-        Mail::to($user->email)->queue(new PasswordResetMail($token));
+        try {
+            $this->mailService->queue($user->email, new PasswordResetMail($token));
+        } catch (\Throwable $exception) {
+            ResetPassword::where('user_id', $user->id)->delete();
+            throw $exception;
+        }
     }
 
 
