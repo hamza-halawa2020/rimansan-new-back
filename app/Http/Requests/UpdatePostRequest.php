@@ -28,6 +28,7 @@ class UpdatePostRequest extends FormRequest
             'content' => 'string',
             'category_id' => 'exists:categories,id',
             'tag_id' => 'exists:tags,id',
+            'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ];
     }
     protected function failedValidation(Validator $validator)

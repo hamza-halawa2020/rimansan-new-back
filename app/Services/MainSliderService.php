@@ -65,7 +65,7 @@ class MainSliderService
         $mainSlider = $this->show($id);
 
         if ($mainSlider->image && $mainSlider->image !== 'images/main-sliders/default.png' && file_exists(public_path($mainSlider->image))) {
-            $this->fileService->delete($mainSlider->image, 'images/main-sliders');
+            $this->fileService->delete($mainSlider->image);
         }
         $mainSlider->delete();
         return $mainSlider;

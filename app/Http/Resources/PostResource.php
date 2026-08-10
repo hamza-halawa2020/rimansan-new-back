@@ -17,14 +17,14 @@ class PostResource extends JsonResource
         // return parent::toArray($request);
         return [
             "category_id" => $this->category_id,
-            "category" => $this->category->name,
+            "category" => optional($this->category)->name,
             "tag_id" => $this->tag_id,
-            "tag" => $this->tag->name,
+            "tag" => optional($this->tag)->name,
             "title" => $this->title,
             "content" => $this->content,
             "admin_id" => $this->admin_id,
-            "admin" => $this->admin->name,
-            "admin_image" => $this->admin->image,
+            "admin" => optional($this->admin)->name,
+            "admin_image" => optional($this->admin)->image,
             "image" => $this->image,
             "created_at" => $this->created_at,
             'postComments' => PostcommentActiveResource::collection($this->postComments->where('status', 'active')),

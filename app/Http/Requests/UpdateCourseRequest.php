@@ -27,12 +27,12 @@ class UpdateCourseRequest extends FormRequest
             'title' => 'string',
             'description' => 'string',
             'video_url' => 'url',
-            'certifications' => '',
+            'certifications' => 'sometimes|in:true,false,1,0',
             'price' => 'numeric|min:0',
             'instructor_id' => 'exists:instructors,id',
             'category_id' => 'exists:categories,id',
             'tag_id' => 'exists:tags,id',
-            'image' => 'nullable|image',
+            'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ];
     }
 

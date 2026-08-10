@@ -37,7 +37,7 @@ class UpdateUserRequest extends FormRequest
                 Rule::unique('users', 'email')->ignore($this->user()->id),
             ],
 
-            'image' => Gate::allows('is-admin') ? 'nullable' : 'sometimes|required|image|max:10240',
+            'image' => 'sometimes|nullable|image|max:10240',
             'type' => 'sometimes|required|string|in:admin,user',
             'phone' => [
                 'sometimes',

@@ -19,8 +19,8 @@ class PostcommentActiveResource extends JsonResource
         'id' => $this->id,
         "comment" => $this->comment,
         "comment" => $this->comment,
-        "user" => $this->user->name,
-        "user_image" => $this->user->image,
+        "user" => optional($this->user)->name,
+        "user_image" => optional($this->user)->image,
         "created_at" => $this->created_at,
     ];    }
 }

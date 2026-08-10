@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreFaqRequest;
 use App\Http\Requests\UpdateFaqRequest;
 use App\Http\Resources\FaqResource;
-use App\Models\Faq;
 use App\Services\FaqService;
 use App\Traits\ApiResponse;
 use Exception;
@@ -73,10 +72,11 @@ class FaqController extends Controller
 
             if (Gate::allows("is-admin")) {
                 $faq = $this->faqService->update($validatedData, $id);
-                return response()->json(['data' => new FaqResource($faq)], 200);
+                return $this->success(new FaqResource($faq));
             }
+            return $this->error('not allow to update Faq.', 403);
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 

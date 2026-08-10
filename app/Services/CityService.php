@@ -17,6 +17,17 @@ class CityService
         return City::create($data);
     }
 
+    public function exists(array $data, ?string $exceptId = null): bool
+    {
+        $query = City::where('country_id', $data['country_id'])->where('name', $data['name']);
+
+        if ($exceptId) {
+            $query->where('id', '!=', $exceptId);
+        }
+
+        return $query->exists();
+    }
+
     public function show(string $id)
     {
         return City::with('country')->findOrFail($id);

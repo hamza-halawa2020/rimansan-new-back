@@ -62,7 +62,7 @@ class CategoryService
         $categories = $this->show($id);
 
         if ($categories->image && $categories->image !== 'images/side-bar/default.png' && file_exists(public_path($categories->image))) {
-            $this->fileService->delete($categories->image, 'images/side-bar');
+            $this->fileService->delete($categories->image);
         }
 
         $categories->delete();

@@ -29,8 +29,9 @@ class StoreEventRequest extends FormRequest
             'title' => 'required|string',
             'content' => 'required|string',
 
-            'image' => 'nullable',
-            'images.*' => 'nullable',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ];
     }
     protected function failedValidation(Validator $validator)

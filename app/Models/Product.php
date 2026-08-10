@@ -18,6 +18,7 @@ class Product extends Model
         'priceBeforeDiscount',
         'discount',
         'priceAfterDiscount',
+        'points',
         'category_id',
         'admin_id',
     ];

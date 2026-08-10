@@ -25,7 +25,7 @@ class UpdateCertificationRequest extends FormRequest
     {
         return [
             'serial_number' => 'string',
-            'file' => 'nullable',
+            'file' => 'sometimes|nullable|file|max:10240',
             'user_id' => 'exists:users,id',
         ];
     }
@@ -40,4 +40,3 @@ class UpdateCertificationRequest extends FormRequest
         );
     }
 }
-

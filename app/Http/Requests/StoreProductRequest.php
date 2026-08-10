@@ -31,6 +31,8 @@ class StoreProductRequest extends FormRequest
             'discount' => 'nullable|numeric|min:0|max:10000',
             'points' => 'nullable|numeric|min:0|max:10000',
             'category_id' => 'required|exists:categories,id',
+            'image' => 'nullable',
+            'image.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ];
     }
 

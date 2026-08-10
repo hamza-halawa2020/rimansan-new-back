@@ -7,28 +7,31 @@ use App\Http\Requests\ActiveProductReviewRequest;
 use App\Http\Requests\StoreProductReviewRequest;
 use App\Http\Requests\UpdateProductReviewRequest;
 use App\Http\Resources\ProductReviewResource;
-use App\Models\Client;
-use App\Models\ProductReview;
+use App\Services\ProductReviewService;
+use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Support\Facades\Gate;
 
 class ProductReviewController extends Controller
 {
+    use ApiResponse;
 
-    function __construct()
+    private ProductReviewService $productReviewService;
+
+    function __construct(ProductReviewService $productReviewService)
     {
         $this->middleware("auth:sanctum")->only(['all', 'showAll', 'active', 'update', 'destroy', 'store']);
         $this->middleware("limitReq");
-
+        $this->productReviewService = $productReviewService;
     }
 
     public function index()
     {
         try {
-            $reviews = ProductReview::where('status', 'active')->orderBy('created_at', 'desc')->get();
-            return ProductReviewResource::collection($reviews);
+            $reviews = $this->productReviewService->index();
+            return $this->success(ProductReviewResource::collection($reviews));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -36,13 +39,13 @@ class ProductReviewController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $reviews = ProductReview::orderBy('created_at', 'desc')->paginate(10);
-                return ProductReviewResource::collection($reviews);
+                $reviews = $this->productReviewService->all();
+                return $this->success(ProductReviewResource::collection($reviews));
             } else {
-                return response()->json(['message' => 'not allow .'], 403);
+                return $this->error('not allow .', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -52,16 +55,11 @@ class ProductReviewController extends Controller
             $validatedData = $request->validated();
 
             $userId = auth()->id();
-            $validatedData['user_id'] = $userId;
+            $review = $this->productReviewService->store($validatedData, $userId);
 
-            $review = ProductReview::create($validatedData);
-
-            return response()->json([
-                'message' => 'Your review submitted but not activated yet.',
-                'data' => new ProductReviewResource($review),
-            ], 200);
+            return $this->success(new ProductReviewResource($review), 'Your review submitted but not activated yet.');
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -69,19 +67,10 @@ class ProductReviewController extends Controller
     {
         try {
             $validatedData = $request->validated();
-            $client = Client::create([
-                'name' => $validatedData['name'],
-                'email' => $validatedData['email'],
-                'phone' => $validatedData['phone'],
-            ]);
-            $validatedData['client_id'] = $client->id;
-            $review = ProductReview::create($validatedData);
-            return response()->json([
-                'message' => 'Your review submitted but not activated yet.',
-                'data' => new ProductReviewResource($review),
-            ], 200);
+            $review = $this->productReviewService->storeByClient($validatedData);
+            return $this->success(new ProductReviewResource($review), 'Your review submitted but not activated yet.');
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -90,10 +79,10 @@ class ProductReviewController extends Controller
     public function show(string $id)
     {
         try {
-            $review = ProductReview::where('status', 'active')->findOrFail($id);
-            return new ProductReviewResource($review);
+            $review = $this->productReviewService->show($id);
+            return $this->success(new ProductReviewResource($review));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -101,13 +90,13 @@ class ProductReviewController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $review = ProductReview::findOrFail($id);
-                return new ProductReviewResource($review);
+                $review = $this->productReviewService->showAll($id);
+                return $this->success(new ProductReviewResource($review));
             } else {
-                return response()->json(['message' => 'not allow to delete review.'], 403);
+                return $this->error('not allow to delete review.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -118,15 +107,13 @@ class ProductReviewController extends Controller
 
                 $validatedData = $request->validated();
                 $adminId = auth()->id();
-                $validatedData['admin_id'] = $adminId;
-                $review = ProductReview::findOrFail($id);
-                $review->update($validatedData);
-                return response()->json(['data' => new ProductReviewResource($review)], 200);
+                $review = $this->productReviewService->active($validatedData, $id, $adminId);
+                return $this->success(new ProductReviewResource($review));
             } else {
-                return response()->json(['message' => 'not allow to active review.'], 403);
+                return $this->error('not allow to active review.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -136,16 +123,16 @@ class ProductReviewController extends Controller
         try {
             $validatedData = $request->validated();
             $userId = auth()->id();
-            $review = ProductReview::findOrFail($id);
+            $review = $this->productReviewService->showAll($id);
 
             if ($review->user_id !== $userId) {
-                return response()->json(['message' => 'You are not the owner of this review.'], 403);
+                return $this->error('You are not the owner of this review.', 403);
             }
-            $review->update($validatedData);
-            return response()->json(['data' => new ProductReviewResource($review)], 200);
+            $review = $this->productReviewService->update($validatedData, $id);
+            return $this->success(new ProductReviewResource($review));
 
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -153,14 +140,13 @@ class ProductReviewController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $user = ProductReview::findOrFail($id);
-                $user->delete();
-                return response()->json(['data' => 'review deleted successfully'], 200);
+                $this->productReviewService->destroy($id);
+                return $this->success(null, 'review deleted successfully');
             } else {
-                return response()->json(['message' => 'not allow to delete review.'], 403);
+                return $this->error('not allow to delete review.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

@@ -17,9 +17,9 @@ class PostCommentResource extends JsonResource
         // return parent::toArray($request);
         return [
             "post_id" => $this->post_id,
-            "post" => $this->post->title,
+            "post" => optional($this->post)->title,
             "user_id" => $this->user_id,
-            "user" => $this->user->name,
+            "user" => optional($this->user)->name,
             "admin_id" => $this->admin_id,
             // "admin" => $this->admin->name,
             "comment" => $this->comment,

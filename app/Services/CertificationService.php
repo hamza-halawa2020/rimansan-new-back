@@ -15,7 +15,7 @@ class CertificationService
     }
     public function index()
     {
-        return Certification::with('user')->all();
+        return Certification::with('user')->get();
     }
 
 
@@ -59,7 +59,7 @@ class CertificationService
     {
         $certification = $this->show($id);
         if ($certification->file  && $certification->file  !== 'images/Certifications/default.png' && file_exists(public_path($certification->file ))) {
-            $this->fileService->delete($certification->file , 'images/Certifications');
+            $this->fileService->delete($certification->file);
         }
         $certification->delete();
         return $certification;
@@ -73,8 +73,10 @@ class CertificationService
     public function downloadFile(string $id): array
     {
         $certification = $this->show($id);
+        $path = str_contains($certification->file, '/') ? $certification->file : 'images/Certifications/' . $certification->file;
+
         return [
-            'path' => public_path('images/Certifications/' . $certification->file),
+            'path' => public_path($path),
             'filename' => $certification->file
         ];
     }

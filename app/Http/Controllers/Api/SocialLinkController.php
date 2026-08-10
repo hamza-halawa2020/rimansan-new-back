@@ -6,26 +6,31 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSocialLinkRequest;
 use App\Http\Requests\UpdateSocialLinkRequest;
 use App\Http\Resources\SocialLinkResource;
-use App\Models\SocialLink;
+use App\Services\SocialLinkService;
+use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Support\Facades\Gate;
 
 class SocialLinkController extends Controller
 {
+    use ApiResponse;
 
-    function __construct()
+    private SocialLinkService $socialLinkService;
+
+    function __construct(SocialLinkService $socialLinkService)
     {
         $this->middleware("auth:sanctum")->except(['index', 'show']);
         $this->middleware("limitReq");
+        $this->socialLinkService = $socialLinkService;
     }
 
     public function index()
     {
         try {
-            $SocialLinks = SocialLink::all();
-            return SocialLinkResource::collection($SocialLinks);
+            $SocialLinks = $this->socialLinkService->index();
+            return $this->success(SocialLinkResource::collection($SocialLinks));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -33,38 +38,29 @@ class SocialLinkController extends Controller
     {
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('icon')) {
+                $validatedData['icon'] = $request->file('icon');
+            }
             $adminId = auth()->id();
             $validatedData['admin_id'] = $adminId;
             if (Gate::allows("is-admin")) {
-
-                if ($request->hasFile('icon')) {
-                    $image = $request->file('icon');
-                    $extension = $image->getClientOriginalExtension();
-                    $filename = time() . '_' . uniqid() . '.' . $extension;
-                    $folderPath = 'images/socials/';
-                    $image->move(public_path($folderPath), $filename);
-
-                }
-
-                $validatedData['icon'] = $filename ?? 'default.png';
-
-                $SocialLink = SocialLink::create($validatedData);
-                return response()->json(['data' => new SocialLinkResource($SocialLink)], 200);
+                $SocialLink = $this->socialLinkService->store($validatedData);
+                return $this->success(new SocialLinkResource($SocialLink));
             } else {
-                return response()->json(['message' => 'not allow to Store SocialLink.'], 403);
+                return $this->error('not allow to Store SocialLink.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function show(string $id)
     {
         try {
-            $SocialLink = SocialLink::findOrFail($id);
-            return new SocialLinkResource($SocialLink);
+            $SocialLink = $this->socialLinkService->show($id);
+            return $this->success(new SocialLinkResource($SocialLink));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -72,30 +68,18 @@ class SocialLinkController extends Controller
     {
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('icon')) {
+                $validatedData['icon'] = $request->file('icon');
+            }
 
             if (!Gate::allows("is-admin")) {
-                return response()->json(['message' => 'Not allowed to update SocialLink.'], 403);
+                return $this->error('Not allowed to update SocialLink.', 403);
             }
 
-            $socialLink = SocialLink::findOrFail($id);
-            if ($request->hasFile('icon')) {
-                $image = $request->file('icon');
-                $extension = $image->getClientOriginalExtension();
-                $filename = time() . '_' . uniqid() . '.' . $extension;
-                $folderPath = 'images/socials/';
-
-                if ($socialLink->icon && $socialLink->icon !== 'images/social/default.png' && file_exists(public_path($socialLink->icon))) {
-                    unlink(public_path($socialLink->icon));
-                }
-
-                $image->move(public_path($folderPath), $filename);
-                $validatedData['icon'] =  $filename;
-            }
-
-            $socialLink->update($validatedData);
-            return response()->json(['data' => new SocialLinkResource($socialLink)], 200);
+            $socialLink = $this->socialLinkService->update($validatedData, $id);
+            return $this->success(new SocialLinkResource($socialLink));
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -103,19 +87,13 @@ class SocialLinkController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $socialLink = SocialLink::findOrFail($id);
-
-                if ($socialLink->icon && $socialLink->icon !== 'images/socials/default.png' && file_exists(public_path($socialLink->icon))) {
-                    unlink(public_path($socialLink->icon));
-                }
-
-                $socialLink->delete();
-                return response()->json(['data' => 'SocialLink deleted successfully'], 200);
+                $this->socialLinkService->destroy($id);
+                return $this->success(null, 'SocialLink deleted successfully');
             } else {
-                return response()->json(['message' => 'not allow to delete SocialLink.'], 403);
+                return $this->error('not allow to delete SocialLink.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

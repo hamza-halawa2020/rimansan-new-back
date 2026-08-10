@@ -17,6 +17,11 @@ class CartService
         return Cart::create($data);
     }
 
+    public function existsForUser($userId, string $productId): bool
+    {
+        return Cart::where('user_id', $userId)->where('product_id', $productId)->exists();
+    }
+
     public function show(string $id, $userId)
     {
         return Cart::where('user_id', $userId)->where('id', $id)->with('product')->firstOrFail();

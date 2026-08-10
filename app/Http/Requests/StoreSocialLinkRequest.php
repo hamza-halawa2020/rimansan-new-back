@@ -26,6 +26,7 @@ class StoreSocialLinkRequest extends FormRequest
         return [
             'name' => 'required|string',
             'url' => 'required|string',
+            'icon' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
         ];
     }
 

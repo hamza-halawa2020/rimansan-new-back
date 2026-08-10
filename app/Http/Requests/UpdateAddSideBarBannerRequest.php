@@ -26,7 +26,7 @@ class UpdateAddSideBarBannerRequest extends FormRequest
         return [
             'link' => 'nullable|string',
             'status' => 'nullable',
-            'image' => 'nullable|image'
+            'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
 
         ];
     }

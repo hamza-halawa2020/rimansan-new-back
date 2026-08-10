@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Http\Resources\EventResource;
-use App\Models\Event;
 use App\Services\EventService;
 use App\Traits\ApiResponse;
 use Exception;
@@ -44,6 +43,12 @@ class EventController extends Controller
         // dd($request->validated());
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('image')) {
+                $validatedData['image'] = $request->file('image');
+            }
+            if ($request->hasFile('images')) {
+                $validatedData['images'] = $request->file('images');
+            }
             $validatedData['admin_id'] = $this->userId;
             if (Gate::allows("is-admin")) {
                 $event = $this->eventService->store($validatedData);
@@ -71,6 +76,12 @@ class EventController extends Controller
         try {
             if (Gate::allows("is-admin")) {
                 $validatedData = $request->validated();
+                if ($request->hasFile('image')) {
+                    $validatedData['image'] = $request->file('image');
+                }
+                if ($request->hasFile('images')) {
+                    $validatedData['images'] = $request->file('images');
+                }
                 $event = $this->eventService->update($validatedData, $id);
                 return $this->success(new EventResource($event), 200);
             }

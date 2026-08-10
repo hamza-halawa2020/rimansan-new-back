@@ -16,14 +16,14 @@ class CartResource extends JsonResource
     {
         // return parent::toArray($request);
 
-        $productPrice = $this->product->priceAfterDiscount;
+        $productPrice = optional($this->product)->priceAfterDiscount ?? 0;
         $totalPrice = $productPrice * $this->quantity;
 
 
         return [
             'id' => $this->id,
             'product_id' => $this->product_id,
-            'product' =>  new ProductResource($this->product),
+            'product' => $this->product ? new ProductResource($this->product) : null,
             'user_id' => $this->user_id,
             'quantity' => $this->quantity,
             'total_price' => $totalPrice,

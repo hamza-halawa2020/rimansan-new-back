@@ -5,18 +5,22 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Gate;
-use App\Models\User;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Services\UserService;
+use App\Services\VerificationCodeService;
+use App\Traits\ApiResponse;
 use Exception;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    private $userId;
+    use ApiResponse;
 
-    function __construct()
+    private $userId;
+    private UserService $userService;
+    private VerificationCodeService $verificationCodeService;
+
+    function __construct(UserService $userService, VerificationCodeService $verificationCodeService)
     {
         $this->middleware("auth:sanctum");
         $this->middleware("limitReq");
@@ -24,19 +28,21 @@ class UserController extends Controller
             $this->userId = auth()->id();
             return $next($request);
         });
+        $this->userService = $userService;
+        $this->verificationCodeService = $verificationCodeService;
     }
 
     public function index()
     {
         try {
             if (Gate::allows("is-admin")) {
-                $users = User::all();
-                return UserResource::collection($users);
+                $users = $this->userService->index();
+                return $this->success(UserResource::collection($users));
             } else {
-                return response()->json(['message' => 'not allow to show users.'], 403);
+                return $this->error('not allow to show users.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -47,102 +53,61 @@ class UserController extends Controller
 
                 $validatedData = $request->validated();
 
-                $user = User::create([
-                    'name' => $validatedData['name'],
-                    'phone' => $validatedData['phone'],
-                    'email' => $validatedData['email'],
-                    'password' => bcrypt('12345678'),
-                    'slug' => Str::slug($validatedData['name']),
-                    'image' => 'default.png',
-                ]);
+                $user = $this->userService->store($validatedData);
 
-                $verificationSent = app(VerificationCodeController::class)
-                ->sendVerificationCode(new Request(['email' => $user->email]));
-
-                if (!$verificationSent) {
+                $verificationSent = $this->verificationCodeService->send($user->email);
+                if ($verificationSent['status'] !== 200) {
                     throw new Exception("Failed to send verification email");
                 }
 
-                return response()->json(['data' => new UserResource($user)], 200);
+                return $this->success(new UserResource($user));
             } else {
-                return response()->json(['message' => 'not allow to show users.'], 403);
+                return $this->error('not allow to show users.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function show(string $id)
     {
         try {
-            $user = User::findOrFail($id);
-            return new UserResource($user);
+            $user = $this->userService->show($id);
+            return $this->success(new UserResource($user));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function profile()
     {
         try {
-            $user = User::with('addresses','points')->findOrFail($this->userId);
-            return new UserResource($user);
+            $user = $this->userService->profile($this->userId);
+            return $this->success(new UserResource($user));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function update(UpdateUserRequest $request, string $id)
     {
         try {
-            $user = User::findOrFail($id);
             $data = $request->validated();
+            if ($request->hasFile('image')) {
+                $data['image'] = $request->file('image');
+            }
 
             if (auth()->user()->id === (int) $id) {
-
-                if ($request->hasFile('image')) {
-                    $image = $request->file('image');
-                    $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                    $folderPath = 'images/users/';
-                    $image->move(public_path($folderPath), $filename);
-
-                    if ($user->image && file_exists(public_path($folderPath . $user->image))) {
-                        unlink(public_path($folderPath . $user->image));
-                    }
-
-                    $data['image'] = $filename;
-                }
-
-
-                $user->update([
-                    'name' => $data['name'] ?? $user->name,
-                    'email' => $data['email'] ?? $user->email,
-                    'phone' => $data['phone'] ?? $user->phone,
-                    'type' => $user->type,
-                    'password' => isset($data['password']) ? bcrypt($data['password']) : $user->password,
-                    'image' => $data['image'] ?? $user->image,
-                ]);
-
-
-                return response()->json(['data' => new UserResource($user)], 200);
+                $user = $this->userService->updateSelf($data, $id);
+                return $this->success(new UserResource($user));
             } else if (Gate::allows('is-admin')) {
-
-                $user->update([
-                    'name' => $data['name'] ?? $user->name,
-                    'phone' => $data['phone'] ?? $user->phone,
-                    'email' => $data['email'] ?? $user->email,
-                    'type' => $data['type'] ?? $user->type,
-                    'password' => $user->password,
-                    'image' => $user->image,
-                ]);
-
-
-                return response()->json(['data' => new UserResource($user)], 200);
+                $user = $this->userService->updateByAdmin($data, $id);
+                return $this->success(new UserResource($user));
             } else {
-                return response()->json(['message' => 'Not authorized to update this user.'], 403);
+                return $this->error('Not authorized to update this user.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -151,14 +116,13 @@ class UserController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $user = User::findOrFail($id);
-                $user->delete();
-                return response()->json(['data' => 'user deleted successfully'], 200);
+                $this->userService->destroy($id);
+                return $this->success(null, 'user deleted successfully');
             } else {
-                return response()->json(['message' => 'not allow to delete user.'], 403);
+                return $this->error('not allow to delete user.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

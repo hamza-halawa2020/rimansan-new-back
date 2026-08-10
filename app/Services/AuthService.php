@@ -7,20 +7,20 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Exception;
-use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
-use App\Http\Controllers\Api\VerificationCodeController;
 use App\Traits\ApiResponse;
 
 class AuthService
 {
     use ApiResponse;
 
-     protected FileService $fileService;
+    protected FileService $fileService;
+    protected VerificationCodeService $verificationCodeService;
 
-    public function __construct(FileService $fileService)
+    public function __construct(FileService $fileService, VerificationCodeService $verificationCodeService)
     {
         $this->fileService = $fileService;
+        $this->verificationCodeService = $verificationCodeService;
     }
 
     public function login(array $credentials)
@@ -51,7 +51,7 @@ class AuthService
         $user->tokens()->delete();
         $token = $user->createToken($user->phone);
 
-        return response()->json([
+        return $this->success([
             'id'    => $user->id,
             'name'  => $user->name,
             'slug'  => $user->slug,
@@ -73,7 +73,7 @@ class AuthService
             return $this->error('User not admin', 403);
         }
 
-        return response()->json($response->original);
+        return $response;
     }
 
     public function register(array $validatedData, $imageFile = null)
@@ -83,7 +83,7 @@ class AuthService
             $filename = null;
 
             if ($imageFile) {
-                $imageFile['image'] = $this->fileService->upload($imageFile, 'images/users');
+                $filename = $this->fileService->upload($imageFile, 'images/users');
             }
 
             $user = User::create([
@@ -95,10 +95,9 @@ class AuthService
                 'image'    => $filename ?? 'default.png',
             ]);
 
-            $verificationSent = app(VerificationCodeController::class)
-                ->sendVerificationCode(new Request(['email' => $user->email]));
+            $verificationSent = $this->verificationCodeService->send($user->email);
 
-            if (!$verificationSent) {
+            if ($verificationSent['status'] !== 200) {
                 throw new Exception("Failed to send verification email");
             }
 

@@ -18,8 +18,8 @@ class CityResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'country' => $this->country->name,
-            'country_id' => $this->country->id,
+            'country' => optional($this->country)->name,
+            'country_id' => optional($this->country)->id,
             'created_at' => $this->created_at,
         ];
     }

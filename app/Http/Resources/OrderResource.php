@@ -26,11 +26,11 @@ class OrderResource extends JsonResource
             'status' => $this->status,
             'notes' => $this->notes,
             'admin_id' => $this->admin_id ?? null,
-            'admin' => $this->admin->name ?? null,
-            'address' => new AddressResource($this->address),
+            'admin' => optional($this->admin)->name,
+            'address' => $this->address ? new AddressResource($this->address) : null,
             'orderItems' => OrderItemResource::collection($this->orderItems),
-            'client' => new OrderClientResource($this->client),
-            'user' => new OrderUserResource($this->user),
+            'client' => $this->client ? new OrderClientResource($this->client) : null,
+            'user' => $this->user ? new OrderUserResource($this->user) : null,
             'created_at' => $this->created_at,
         ];
     }

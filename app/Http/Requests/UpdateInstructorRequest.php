@@ -29,7 +29,7 @@ class UpdateInstructorRequest extends FormRequest
             'phone' => 'min:8|numeric',
             'job_title' => 'string',
             'description' => 'string',
-            'image' => 'nullable'
+            'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ];
     }
     protected function failedValidation(Validator $validator)

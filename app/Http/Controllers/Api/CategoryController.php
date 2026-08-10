@@ -38,6 +38,9 @@ class CategoryController extends Controller
     {
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('image')) {
+                $validatedData['image'] = $request->file('image');
+            }
             if (Gate::allows("is-admin")) {
 
                 $category = $this->categoryService->store($validatedData);
@@ -64,6 +67,9 @@ class CategoryController extends Controller
     {
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('image')) {
+                $validatedData['image'] = $request->file('image');
+            }
             if (Gate::allows("is-admin")) {
 
                 $category = $this->categoryService->update($validatedData, $id);

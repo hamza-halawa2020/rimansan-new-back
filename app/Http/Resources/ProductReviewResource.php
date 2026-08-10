@@ -15,11 +15,14 @@ class ProductReviewResource extends JsonResource
     public function toArray(Request $request): array
     {
         // return parent::toArray($request);
+        $product = $this->product;
+        $productImage = $product ? optional($product->productImages->first())->image : null;
+
         return [
             'id' => $this->id,
             "product_id" => $this->product_id,
-            "product" => $this->product->title,
-            "product_image" => $this->product->productImages[0]->image,
+            "product" => optional($product)->title,
+            "product_image" => $productImage,
             "review" => $this->review,
             "rating" => $this->rating,
             "status" => $this->status,

@@ -18,7 +18,7 @@ class FavouriteResource extends JsonResource
         return [
             'id' => $this->id,
             'product_id' => $this->product_id,
-            'product' =>  new ProductResource($this->product),
+            'product' => $this->product ? new ProductResource($this->product) : null,
             'user_id' => $this->user_id,
             'created_at' => $this->created_at,
         ];

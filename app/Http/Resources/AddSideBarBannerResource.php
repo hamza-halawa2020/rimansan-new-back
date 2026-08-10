@@ -21,7 +21,7 @@ class AddSideBarBannerResource extends JsonResource
             'link' => $this->link,
             'status' => $this->status,
             'admin_id' => $this->admin_id,
-            'admin' => $this->admin->name,
+            'admin' => optional($this->admin)->name,
             'created_at' => $this->created_at
         ];
     }

@@ -64,7 +64,7 @@ class AddSideBarBannerService
         $addSideBarBanner = $this->show($id);
 
         if ($addSideBarBanner->image && $addSideBarBanner->image !== 'images/side-bar/default.png' && file_exists(public_path($addSideBarBanner->image))) {
-            $this->fileService->delete($addSideBarBanner->image, 'images/side-bar');
+            $this->fileService->delete($addSideBarBanner->image);
         }
 
         $addSideBarBanner->delete();

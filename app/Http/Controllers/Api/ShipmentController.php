@@ -6,15 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreShipmentRequest;
 use App\Http\Requests\UpdateShipmentRequest;
 use App\Http\Resources\ShipmentResource;
-use App\Models\Shipment;
+use App\Services\ShipmentService;
+use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Support\Facades\Gate;
 
 class ShipmentController extends Controller
 {
-    private $userId;
+    use ApiResponse;
 
-    function __construct()
+    private $userId;
+    private ShipmentService $shipmentService;
+
+    function __construct(ShipmentService $shipmentService)
     {
         $this->middleware("auth:sanctum")->except(['index', 'show']);
         $this->middleware("limitReq");
@@ -22,15 +26,16 @@ class ShipmentController extends Controller
             $this->userId = auth()->id();
             return $next($request);
         });
+        $this->shipmentService = $shipmentService;
     }
 
     public function index()
     {
         try {
-            $cities = Shipment::all();
-            return ShipmentResource::collection($cities);
+            $cities = $this->shipmentService->index();
+            return $this->success(ShipmentResource::collection($cities));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -40,22 +45,22 @@ class ShipmentController extends Controller
             if (Gate::allows("is-admin")) {
                 $validatedData = $request->validated();
                 $validatedData['user_id'] = $this->userId;
-                $Shipment = Shipment::create($validatedData);
-                return response()->json(['data' => new ShipmentResource($Shipment)], 200);
+                $Shipment = $this->shipmentService->store($validatedData);
+                return $this->success(new ShipmentResource($Shipment));
             } else {
-                return response()->json(['message' => 'not allow to Store shipment.'], 403);
+                return $this->error('not allow to Store shipment.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
     public function show(string $id)
     {
         try {
-            $Shipment = Shipment::findOrFail($id);
-            return new ShipmentResource($Shipment);
+            $Shipment = $this->shipmentService->show($id);
+            return $this->success(new ShipmentResource($Shipment));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -65,14 +70,13 @@ class ShipmentController extends Controller
         try {
             if (Gate::allows("is-admin")) {
                 $validatedData = $request->validated();
-                $Shipment = Shipment::findOrFail($id);
-                $Shipment->update($validatedData);
-                return response()->json(['data' => new ShipmentResource($Shipment)], 200);
+                $Shipment = $this->shipmentService->update($validatedData, $id);
+                return $this->success(new ShipmentResource($Shipment));
             } else {
-                return response()->json(['message' => 'not allow to Store shipment.'], 403);
+                return $this->error('not allow to Store shipment.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -80,14 +84,13 @@ class ShipmentController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $Shipment = Shipment::findOrFail($id);
-                $Shipment->delete();
-                return response()->json(['data' => 'Shipment deleted successfully'], 200);
+                $this->shipmentService->destroy($id);
+                return $this->success(null, 'Shipment deleted successfully');
             } else {
-                return response()->json(['message' => 'not allow to Store shipment.'], 403);
+                return $this->error('not allow to Store shipment.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

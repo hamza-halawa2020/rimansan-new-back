@@ -26,6 +26,7 @@ class UpdateSocialLinkRequest extends FormRequest
         return [
             'name' => 'nullable|string',
             'url' => 'nullable|string',
+            'icon' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
         ];
     }
     protected function failedValidation(Validator $validator)

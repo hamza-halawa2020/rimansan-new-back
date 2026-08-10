@@ -24,6 +24,10 @@ class Course extends Model
 
     ];
 
+    protected $casts = [
+        'certifications' => 'boolean',
+    ];
+
     public function admin()
     {
         return $this->belongsTo(User::class);

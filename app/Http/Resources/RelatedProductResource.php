@@ -23,10 +23,10 @@ class RelatedProductResource extends JsonResource
             "priceBeforeDiscount" => $this->priceBeforeDiscount,
             "discount" => $this->discount,
             "priceAfterDiscount" => $this->priceAfterDiscount,
-            "category" => $this->category->name,
+            "category" => optional($this->category)->name,
             "productImages" => $this->productImages,
-            "admin" => $this->admin->name,
-            "admin_id" => $this->admin->id,
+            "admin" => optional($this->admin)->name,
+            "admin_id" => optional($this->admin)->id,
             "created_at" => $this->created_at,
         ];
     }

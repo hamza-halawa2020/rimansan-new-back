@@ -18,9 +18,9 @@ class AddressResource extends JsonResource
         return [
             'id' => $this->id,
             'address' => $this->address,
-            'country' => $this->country->name,
+            'country' => optional($this->country)->name,
             'country_id' => $this->country_id,
-            'city' => $this->city->name,
+            'city' => optional($this->city)->name,
             'city_id' => $this->city_id,
             'user_id' => $this->user_id,
             'user' => new OrderUserResource($this->user),

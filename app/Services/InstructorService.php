@@ -65,7 +65,7 @@ class InstructorService
         $instructor = $this->show($id);
 
         if ($instructor->image && $instructor->image !== 'images/instructors/default.png' && file_exists(public_path($instructor->image))) {
-            $this->fileService->delete($instructor->image, 'images/instructors');
+            $this->fileService->delete($instructor->image);
         }
         $instructor->delete();
         return $instructor;

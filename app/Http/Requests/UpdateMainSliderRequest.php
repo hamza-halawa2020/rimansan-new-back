@@ -27,7 +27,7 @@ class UpdateMainSliderRequest extends FormRequest
             'description' => 'nullable|string',
             'link' => 'nullable|string',
             'status' => 'nullable',
-            'image'=>'nullable'
+            'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
 
         ];
     }
@@ -41,4 +41,3 @@ class UpdateMainSliderRequest extends FormRequest
         );
     }
 }
-

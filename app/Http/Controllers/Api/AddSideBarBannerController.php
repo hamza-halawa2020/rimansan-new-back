@@ -49,6 +49,9 @@ class AddSideBarBannerController extends Controller
     {
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('image')) {
+                $validatedData['image'] = $request->file('image');
+            }
             $adminId = auth()->id();
             $validatedData['admin_id'] = $adminId;
             if (Gate::allows("is-admin")) {
@@ -77,6 +80,9 @@ class AddSideBarBannerController extends Controller
 
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('image')) {
+                $validatedData['image'] = $request->file('image');
+            }
 
             if (!Gate::allows("is-admin")) {
                 return $this->error('not allow to update AddSideBarBanner.', 403);

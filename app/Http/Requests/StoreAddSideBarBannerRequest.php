@@ -26,7 +26,7 @@ class StoreAddSideBarBannerRequest extends FormRequest
         return [
             'link' => 'required|string',
             'status' => 'required',
-            'image' => 'nullable'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ];
     }
 

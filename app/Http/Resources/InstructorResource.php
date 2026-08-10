@@ -24,7 +24,7 @@ class InstructorResource extends JsonResource
             'job_title' => $this->job_title,
             'description' => $this->description,
             'admin_id' => $this->admin_id,
-            'admin' => $this->admin->name,
+            'admin' => optional($this->admin)->name,
             'courses' =>  CourseResource::collection($this->courses),
             'created_at' => $this->created_at,
         ];

@@ -7,17 +7,20 @@ use App\Http\Requests\ActivePostCommentRequest;
 use App\Http\Requests\StorePostCommentRequest;
 use App\Http\Requests\UpdatePostCommentRequest;
 use App\Http\Resources\PostCommentResource;
-use App\Models\PostComment;
+use App\Services\PostCommentService;
+use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 
 class PostCommentController extends Controller
 {
+    use ApiResponse;
 
     private $userId;
+    private PostCommentService $postCommentService;
 
-    function __construct()
+    function __construct(PostCommentService $postCommentService)
     {
         $this->middleware("auth:sanctum")->except(['index', 'show']);
         $this->middleware("limitReq");
@@ -25,17 +28,17 @@ class PostCommentController extends Controller
             $this->userId = auth()->id();
             return $next($request);
         });
-
+        $this->postCommentService = $postCommentService;
     }
 
 
     public function index()
     {
         try {
-            $comments = PostComment::where('status', 'active')->orderBy('created_at', 'desc')->get();
-            return PostCommentResource::collection($comments);
+            $comments = $this->postCommentService->index();
+            return $this->success(PostCommentResource::collection($comments));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -43,20 +46,13 @@ class PostCommentController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $postId = $request->query('post_id'); // Get post_id from query string
-                $query = PostComment::query();
-
-                if ($postId) {
-                    $query->where('post_id', $postId); // Filter by post_id if provided
-                }
-
-                $comments = $query->paginate(10);
-                return PostCommentResource::collection($comments);
+                $comments = $this->postCommentService->all($request->query('post_id'));
+                return $this->success(PostCommentResource::collection($comments));
             } else {
-                return response()->json(['message' => 'Not allowed to view comments.'], 403);
+                return $this->error('Not allowed to view comments.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -65,15 +61,11 @@ class PostCommentController extends Controller
     {
         try {
             $validatedData = $request->validated();
-            $validatedData['user_id'] = $this->userId;
-            $comment = PostComment::create($validatedData);
-            return response()->json([
-                'message' => 'Your comment submitted but not activated yet .',
-                'data' => new PostCommentResource($comment)
-            ], 200);
+            $comment = $this->postCommentService->store($validatedData, $this->userId);
+            return $this->success(new PostCommentResource($comment), 'Your comment submitted but not activated yet .');
 
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -82,10 +74,10 @@ class PostCommentController extends Controller
     public function show(string $id)
     {
         try {
-            $comment = PostComment::where('status', 'active')->findOrFail($id);
-            return new PostCommentResource($comment);
+            $comment = $this->postCommentService->show($id);
+            return $this->success(new PostCommentResource($comment));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -93,13 +85,13 @@ class PostCommentController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $comment = PostComment::findOrFail($id);
-                return new PostCommentResource($comment);
+                $comment = $this->postCommentService->showAll($id);
+                return $this->success(new PostCommentResource($comment));
             } else {
-                return response()->json(['message' => 'not allow to delete comment.'], 403);
+                return $this->error('not allow to delete comment.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -109,15 +101,13 @@ class PostCommentController extends Controller
             if (Gate::allows("is-admin")) {
 
                 $validatedData = $request->validated();
-                $validatedData['admin_id'] = $this->userId;
-                $comment = PostComment::findOrFail($id);
-                $comment->update($validatedData);
-                return response()->json(['data' => new PostCommentResource($comment)], 200);
+                $comment = $this->postCommentService->active($validatedData, $id, $this->userId);
+                return $this->success(new PostCommentResource($comment));
             } else {
-                return response()->json(['message' => 'not allow to active comment.'], 403);
+                return $this->error('not allow to active comment.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -126,16 +116,16 @@ class PostCommentController extends Controller
     {
         try {
             $validatedData = $request->validated();
-            $comment = PostComment::findOrFail($id);
+            $comment = $this->postCommentService->showAll($id);
 
             if ($comment->user_id !== $this->userId) {
-                return response()->json(['message' => 'You are not the owner of this comment.'], 403);
+                return $this->error('You are not the owner of this comment.', 403);
             }
-            $comment->update($validatedData);
-            return response()->json(['data' => new PostCommentResource($comment)], 200);
+            $comment = $this->postCommentService->update($validatedData, $id);
+            return $this->success(new PostCommentResource($comment));
 
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -143,14 +133,13 @@ class PostCommentController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $user = PostComment::findOrFail($id);
-                $user->delete();
-                return response()->json(['data' => 'comment deleted successfully'], 200);
+                $this->postCommentService->destroy($id);
+                return $this->success(null, 'comment deleted successfully');
             } else {
-                return response()->json(['message' => 'not allow to delete comment.'], 403);
+                return $this->error('not allow to delete comment.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Http\Resources\CourseResource;
-use App\Models\Course;
 use App\Services\CourseService;
 use App\Traits\ApiResponse;
 use Exception;
@@ -56,6 +55,9 @@ class CourseController extends Controller
         try {
             if (Gate::allows("is-admin")) {
                 $validatedData = $request->validated();
+                if ($request->hasFile('image')) {
+                    $validatedData['image'] = $request->file('image');
+                }
                 $validatedData['admin_id'] = $this->userId;
                 $course = $this->courseService->store($validatedData);
                 return $this->success(new CourseResource($course), 201);
@@ -80,6 +82,9 @@ class CourseController extends Controller
     {
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('image')) {
+                $validatedData['image'] = $request->file('image');
+            }
             if (!Gate::allows("is-admin")) {
                 return $this->error('not allow to update course.', 403);
             }

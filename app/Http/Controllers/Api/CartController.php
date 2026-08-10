@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCartRequest;
 use App\Http\Requests\UpdateCartRequest;
 use App\Http\Resources\CartResource;
-use App\Models\Cart;
 use App\Services\CartService;
 use App\Traits\ApiResponse;
 use Exception;
@@ -46,7 +45,7 @@ class CartController extends Controller
             $validatedData['user_id'] = $this->userId;
             $validatedData['quantity'] = 1;
 
-            $exists = Cart::where('user_id', $this->userId)->where('product_id', $validatedData['product_id'])->exists();
+            $exists = $this->cartService->existsForUser($this->userId, $validatedData['product_id']);
             if ($exists) {
                 return $this->error('This product is already in your Carts.', 409);
             }

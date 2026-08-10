@@ -34,6 +34,7 @@ class UpdateCategoryRequest extends FormRequest
 
             ];
         }
+        $rules['image'] = 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048';
     
         return $rules;
     }

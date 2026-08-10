@@ -15,12 +15,15 @@ class CourseReviewResource extends JsonResource
     public function toArray(Request $request): array
     {
         // return parent::toArray($request);
+        $course = $this->course;
+        $user = $this->user;
+
         return [
             'id' => $this->id,
             "course_id" => $this->course_id,
-            "course" => $this->course->title,
+            "course" => optional($course)->title,
             "user_id" => $this->user_id,
-            "user" => $this->user->name,
+            "user" => optional($user)->name,
             "review" => $this->review,
             "rating" => $this->rating,
             "status" => $this->status,

@@ -42,11 +42,14 @@ class CertificationController extends Controller
     {
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('file')) {
+                $validatedData['file'] = $request->file('file');
+            }
             if (Gate::allows("is-admin")) {
                 $certifiaction = $this->certificationService->store($validatedData);
                 return $this->success(new CertificationResource($certifiaction), 'certifiaction created successfully', 201);
             } else {
-                return $this->errro('not allow to Store certifiaction.', 403);
+                return $this->error('not allow to Store certifiaction.', 403);
             }
         } catch (Exception $e) {
             return $this->error($e->getMessage(), 500);
@@ -69,6 +72,9 @@ class CertificationController extends Controller
     {
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('file')) {
+                $validatedData['file'] = $request->file('file');
+            }
             if (!Gate::allows("is-admin")) {
                 return $this->error('Not allowed to update Certification.', 403);
             }

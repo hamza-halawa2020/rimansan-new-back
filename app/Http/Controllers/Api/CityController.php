@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCityRequest;
 use App\Http\Requests\UpdateCityRequest;
 use App\Http\Resources\CityResource;
-use App\Models\City;
 use App\Services\CityService;
 use App\Traits\ApiResponse;
 use Exception;
@@ -45,7 +44,7 @@ class CityController extends Controller
         try {
             $validatedData = $request->validated();
             if (Gate::allows("is-admin")) {
-                $exists = City::where('country_id', $validatedData['country_id'])->where('name', $validatedData['name'])->exists();
+                $exists = $this->cityService->exists($validatedData);
                 if ($exists) {
                     return $this->error('This City is already exists.', 409);
                 }
@@ -75,7 +74,7 @@ class CityController extends Controller
         try {
             $validatedData = $request->validated();
             if (Gate::allows("is-admin")) {
-                $exists = City::where('country_id', $validatedData['country_id'])->where('name', $validatedData['name'])->where('id', '!=', $id)->exists();
+                $exists = $this->cityService->exists($validatedData, $id);
                 if ($exists) {
                     return $this->error('This City already exists in the specified country.', 409);
                 }

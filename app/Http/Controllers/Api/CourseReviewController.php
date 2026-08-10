@@ -7,7 +7,6 @@ use App\Http\Requests\ActiveCourseReviewRequest;
 use App\Http\Requests\StoreCourseReviewRequest;
 use App\Http\Requests\UpdateCourseReviewRequest;
 use App\Http\Resources\CourseReviewResource;
-use App\Models\CourseReview;
 use App\Services\CourseReviewService;
 use App\Traits\ApiResponse;
 use Exception;
@@ -60,7 +59,7 @@ class CourseReviewController extends Controller
         try {
             $validatedData = $request->validated();
             $validatedData['user_id'] = $this->userId;
-            $review = CourseReview::create($validatedData);
+            $review = $this->courseReviewService->store($validatedData);
             return $this->success(new CourseReviewResource($review), 200);
         } catch (Exception $e) {
             return $this->error($e->getMessage(), 500);
@@ -112,12 +111,11 @@ class CourseReviewController extends Controller
     {
         try {
             $validatedData = $request->validated();
-            $userId = auth()->id();
-            $review = $this->courseReviewService->update($validatedData, $id);
-            if ($review->user_id !== $userId) {
+            $review = $this->courseReviewService->showAll($id);
+            if ($review->user_id !== $this->userId) {
                 return $this->success('You are not the owner of this review.', 403);
             }
-            $review->update($validatedData);
+            $review = $this->courseReviewService->update($validatedData, $id);
             return $this->success(new CourseReviewResource($review), 200);
         } catch (Exception $e) {
             return $this->error($e->getMessage(), 500);

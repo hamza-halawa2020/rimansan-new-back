@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreFavouriteRequest;
 use App\Http\Resources\FavouriteResource;
-use App\Models\Favourite;
 use App\Traits\ApiResponse;
 use Exception;
 use App\Services\FavouriteService;

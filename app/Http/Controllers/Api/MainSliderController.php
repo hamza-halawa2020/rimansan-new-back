@@ -7,15 +7,19 @@ use App\Http\Requests\ActiveMainSliderRequest;
 use App\Http\Requests\StoreMainSliderRequest;
 use App\Http\Requests\UpdateMainSliderRequest;
 use App\Http\Resources\MainSliderResource;
-use App\Models\MainSlider;
+use App\Services\MainSliderService;
+use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Support\Facades\Gate;
 
 class MainSliderController extends Controller
 {
-    private $userId;
+    use ApiResponse;
 
-    function __construct()
+    private $userId;
+    private MainSliderService $mainSliderService;
+
+    function __construct(MainSliderService $mainSliderService)
     {
         $this->middleware("auth:sanctum")->except(['index', 'show']);
         $this->middleware("limitReq");
@@ -23,25 +27,25 @@ class MainSliderController extends Controller
             $this->userId = auth()->id();
             return $next($request);
         });
-
+        $this->mainSliderService = $mainSliderService;
     }
 
     public function index()
     {
         try {
-            $MainSliders = MainSlider::where('status', 'active')->get();
-            return MainSliderResource::collection($MainSliders);
+            $MainSliders = $this->mainSliderService->index();
+            return $this->success(MainSliderResource::collection($MainSliders));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
     public function all()
     {
         try {
-            $addSideBarBanner = MainSlider::paginate(10);
-            return MainSliderResource::collection($addSideBarBanner);
+            $addSideBarBanner = $this->mainSliderService->all();
+            return $this->success(MainSliderResource::collection($addSideBarBanner));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -50,33 +54,28 @@ class MainSliderController extends Controller
     {
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('image')) {
+                $validatedData['image'] = $request->file('image');
+            }
             $validatedData['admin_id'] = $this->userId;
             if (Gate::allows("is-admin")) {
-                if ($request->hasFile('image')) {
-                    $image = $request->file('image');
-                    $extension = $image->getClientOriginalExtension();
-                    $filename = time() . '_' . uniqid() . '.' . $extension;
-                    $folderPath = 'images/main-sliders/';
-                    $image->move(public_path($folderPath), $filename);
-                }
-                $validatedData['image'] = $filename ?? 'default.png';
-                $MainSlider = MainSlider::create($validatedData);
-                return response()->json(['data' => new MainSliderResource($MainSlider)], 200);
+                $MainSlider = $this->mainSliderService->store($validatedData);
+                return $this->success(new MainSliderResource($MainSlider));
             } else {
-                return response()->json(['message' => 'not allow to Store MainSlider.'], 403);
+                return $this->error('not allow to Store MainSlider.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
     public function show(string $id)
     {
         try {
-            $MainSlider = MainSlider::findOrFail($id);
-            return new MainSliderResource($MainSlider);
+            $MainSlider = $this->mainSliderService->show($id);
+            return $this->success(new MainSliderResource($MainSlider));
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -85,14 +84,13 @@ class MainSliderController extends Controller
         try {
             if (Gate::allows("is-admin")) {
                 $validatedData = $request->validated();
-                $MainSlider = MainSlider::findOrFail($id);
-                $MainSlider->update($validatedData);
-                return response()->json(['data' => new MainSliderResource($MainSlider)], 200);
+                $MainSlider = $this->mainSliderService->active($validatedData, $id);
+                return $this->success(new MainSliderResource($MainSlider));
             } else {
-                return response()->json(['message' => 'not allow to active MainSlider.'], 403);
+                return $this->error('not allow to active MainSlider.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -100,28 +98,17 @@ class MainSliderController extends Controller
     {
         try {
             $validatedData = $request->validated();
+            if ($request->hasFile('image')) {
+                $validatedData['image'] = $request->file('image');
+            }
 
             if (Gate::allows("is-admin")) {
-                $MainSlider = MainSlider::findOrFail($id);
-
-
-                if ($request->hasFile('image')) {
-                    $image = $request->file('image');
-                    $extension = $image->getClientOriginalExtension();
-                    $filename = time() . '_' . uniqid() . '.' . $extension;
-                    $folderPath = 'images/main-sliders/';
-                    if ($MainSlider->image && $MainSlider->image !== 'images/main-sliders/default.png' && file_exists(public_path($MainSlider->image))) {
-                        unlink(public_path($MainSlider->image));
-                    }
-                    $image->move(public_path($folderPath), $filename);
-                    $validatedData['image'] =  $filename;
-                }
-
-                $MainSlider->update($validatedData);
-                return response()->json(['data' => new MainSliderResource($MainSlider)], 200);
+                $MainSlider = $this->mainSliderService->update($validatedData, $id);
+                return $this->success(new MainSliderResource($MainSlider));
             }
+            return $this->error('not allow to update MainSlider.', 403);
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
@@ -129,14 +116,13 @@ class MainSliderController extends Controller
     {
         try {
             if (Gate::allows("is-admin")) {
-                $MainSlider = MainSlider::findOrFail($id);
-                $MainSlider->delete();
-                return response()->json(['data' => 'MainSlider deleted successfully'], 200);
+                $this->mainSliderService->destroy($id);
+                return $this->success(null, 'MainSlider deleted successfully');
             } else {
-                return response()->json(['message' => 'not allow to delete MainSlider.'], 403);
+                return $this->error('not allow to delete MainSlider.', 403);
             }
         } catch (Exception $e) {
-            return response()->json($e->getMessage(), 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

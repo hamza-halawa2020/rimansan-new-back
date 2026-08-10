@@ -25,7 +25,7 @@ class StoreCertificationRequest extends FormRequest
     {
         return [
             'serial_number' => 'required|string',
-            'file' => 'required',
+            'file' => 'required|file|max:10240',
             'user_id' => 'required|exists:users,id',
         ];
     }

@@ -28,10 +28,9 @@ class UpdateEventRequest extends FormRequest
             'tag_id' => 'exists:tags,id',
             'title' => 'string',
             'content' => 'string',
-            'image*' => 'nullable',
-
-            'image' => 'nullable',
-            'images.*' => 'nullable',
+            'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ];
     }
     protected function failedValidation(Validator $validator)

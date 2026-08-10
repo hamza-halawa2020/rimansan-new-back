@@ -27,6 +27,8 @@ class CourseService
 
     public function store(array $data)
     {
+        $this->normalizeCertifications($data);
+
         if (isset($data['image']) && $data['image']->isValid()) {
             $data['image'] = $this->fileService->upload($data['image'], 'images/Courses');
         } else {
@@ -43,6 +45,8 @@ class CourseService
     public function update(array $data, $id)
     {
         $course = $this->show($id);
+        $this->normalizeCertifications($data);
+
         if (isset($data['image']) && $data['image']->isValid()) {
             if ($course->image && $course->image !== 'images/Courses/default.png' && file_exists(public_path($course->image))) {
                 $this->fileService->delete($course->image);
@@ -56,13 +60,22 @@ class CourseService
         return $course;
     }
 
+    private function normalizeCertifications(array &$data): void
+    {
+        if (!array_key_exists('certifications', $data)) {
+            return;
+        }
+
+        $data['certifications'] = filter_var($data['certifications'], FILTER_VALIDATE_BOOLEAN);
+    }
+
 
     public function destroy(string $id)
     {
         $course = $this->show($id);
 
         if ($course->image && $course->image !== 'images/Courses/default.png' && file_exists(public_path($course->image))) {
-            $this->fileService->delete($course->image, 'images/Courses');
+            $this->fileService->delete($course->image);
         }
         $course->delete();
         return $course;

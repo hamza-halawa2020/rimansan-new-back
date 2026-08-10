@@ -53,9 +53,7 @@ class EventService
         $event = $this->show($id);
 
         if (isset($data['image']) && $data['image']->isValid()) {
-            if ($event->image && $event->image !== 'default.png' && file_exists(public_path('images/events/' . $event->image))) {
-                $this->fileService->delete('images/events/' . $event->image);
-            }
+            $this->deleteEventImageFile($event->image);
 
             $data['image'] = $this->fileService->upload($data['image'], 'images/events');
         } else {
@@ -78,9 +76,7 @@ class EventService
             foreach ($data['delete_images'] as $imageId) {
                 $eventImage = $event->eventImages()->find($imageId);
                 if ($eventImage) {
-                    if ($eventImage->image && file_exists(public_path('images/events/' . $eventImage->image))) {
-                        $this->fileService->delete('images/events/' . $eventImage->image);
-                    }
+                    $this->deleteEventImageFile($eventImage->image);
                     $eventImage->delete();
                 }
             }
@@ -94,9 +90,7 @@ class EventService
     {
         $event = $this->show($eventId);
         $image = $event->eventImages()->findOrFail($imageId);
-        if ($image->image && $image->image !== 'images/events/default.png' && file_exists(public_path($image->image))) {
-            $this->fileService->delete($image->image, 'images/events');
-        }
+        $this->deleteEventImageFile($image->image);
         $image->delete();
         return $image;
     }
@@ -107,5 +101,15 @@ class EventService
         $event = $this->show($id);
         $event->delete();
         return $event;
+    }
+
+    private function deleteEventImageFile(?string $image): void
+    {
+        if (!$image || $image === 'default.png' || $image === 'images/events/default.png') {
+            return;
+        }
+
+        $path = str_contains($image, '/') ? $image : 'images/events/' . $image;
+        $this->fileService->delete($path);
     }
 }

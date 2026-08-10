@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreInstructorRequest;
 use App\Http\Requests\UpdateInstructorRequest;
 use App\Http\Resources\InstructorResource;
-use App\Models\Instructor;
 use App\Services\InstructorService;
 use App\Traits\ApiResponse;
 use Exception;
@@ -55,6 +54,9 @@ class InstructorController extends Controller
         try {
             if (Gate::allows("is-admin")) {
                 $validatedData = $request->validated();
+                if ($request->hasFile('image')) {
+                    $validatedData['image'] = $request->file('image');
+                }
                 $validatedData['admin_id'] = $this->userId;
                 $instructor = $this->instructorService->store($validatedData);
                 return $this->success(new InstructorResource($instructor), 201);
@@ -80,6 +82,9 @@ class InstructorController extends Controller
         try {
             if (Gate::allows("is-admin")) {
                 $validatedData = $request->validated();
+                if ($request->hasFile('image')) {
+                    $validatedData['image'] = $request->file('image');
+                }
                 $instructor = $this->instructorService->update($validatedData, $id);
                 return $this->success(new InstructorResource($instructor), 200);
             }

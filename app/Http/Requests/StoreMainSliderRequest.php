@@ -27,7 +27,7 @@ class StoreMainSliderRequest extends FormRequest
             'title' => 'nullable|string',
             'description' => 'nullable|string',
             'link' => 'nullable|string',
-            'image' => 'nullable'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
 
         ];
     }

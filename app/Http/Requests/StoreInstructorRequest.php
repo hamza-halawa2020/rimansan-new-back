@@ -29,7 +29,7 @@ class StoreInstructorRequest extends FormRequest
             'phone' => 'required|min:8|numeric',
             'job_title' => 'required|string',
             'description' => 'required|string',
-            'image' => 'nullable'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
 
         ];
     }
