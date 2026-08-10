@@ -25,15 +25,9 @@ class AuthService
 
     public function login(array $credentials)
     {
-        $user = null;
+        $authenticated = $this->attemptLogin($credentials);
 
-        if (filter_var($credentials['emailOrPhone'], FILTER_VALIDATE_EMAIL)) {
-            $user = Auth::attempt(['email' => $credentials['emailOrPhone'], 'password' => $credentials['password']]);
-        } else {
-            $user = Auth::attempt(['phone' => $credentials['emailOrPhone'], 'password' => $credentials['password']]);
-        }
-
-        if (!$user) {
+        if (!$authenticated) {
             return $this->error(
                 filter_var($credentials['emailOrPhone'], FILTER_VALIDATE_EMAIL)
                     ? 'Invalid email or password'
@@ -44,6 +38,51 @@ class AuthService
 
         $user = Auth::user();
 
+        if (!$user) {
+            return $this->error('Invalid credentials', 401);
+        }
+
+        return $this->loginResponse($user);
+    }
+
+    public function adminLogin(array $credentials)
+    {
+        $authenticated = $this->attemptLogin($credentials);
+
+        if (!$authenticated) {
+            return $this->error(
+                filter_var($credentials['emailOrPhone'], FILTER_VALIDATE_EMAIL)
+                    ? 'Invalid email or password'
+                    : 'Invalid phone number or password',
+                401
+            );
+        }
+
+        $user = Auth::user();
+
+        if (!$user) {
+            return $this->error('Invalid credentials', 401);
+        }
+
+        if ($user->type !== 'admin') {
+            Auth::logout();
+            return $this->error('User not admin', 403);
+        }
+
+        return $this->loginResponse($user);
+    }
+
+    private function attemptLogin(array $credentials): bool
+    {
+        if (filter_var($credentials['emailOrPhone'], FILTER_VALIDATE_EMAIL)) {
+            return Auth::attempt(['email' => $credentials['emailOrPhone'], 'password' => $credentials['password']]);
+        }
+
+        return Auth::attempt(['phone' => $credentials['emailOrPhone'], 'password' => $credentials['password']]);
+    }
+
+    private function loginResponse(User $user)
+    {
         if (!$user->email_verified_at) {
             return $this->error('User not verified', 401);
         }
@@ -60,20 +99,6 @@ class AuthService
             'phone' => $user->phone,
             'token' => $token->plainTextToken
         ]);
-    }
-
-    public function adminLogin(array $credentials)
-    {
-        $response = $this->login($credentials);
-
-   
-        $user = Auth::user();
-
-        if ($user->type !== 'admin') {
-            return $this->error('User not admin', 403);
-        }
-
-        return $response;
     }
 
     public function register(array $validatedData, $imageFile = null)
